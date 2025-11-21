@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Setup/refresh script for Panda monorepo
+# This is a convenience wrapper around the init script
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+# Run the init script (which handles discovery, cloning, and hooks)
+"$REPO_ROOT/init"

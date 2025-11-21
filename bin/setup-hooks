@@ -1,0 +1,262 @@
+#!/bin/bash
+
+# Setup Git hooks for the Panda monorepo
+# This script installs pre-push hooks that prevent accidental pushes
+# of Gemfiles with local path references
+
+set -e
+
+# Get repository root (parent of bin directory)
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+HOOKS_DIR="$REPO_ROOT/.git/hooks"
+
+echo "🔧 Setting up Git hooks for Panda monorepo..."
+echo ""
+
+# Ensure hooks directory exists
+if [ ! -d "$HOOKS_DIR" ]; then
+  echo "❌ Error: Git hooks directory not found at $HOOKS_DIR"
+  echo "   Are you running this from the repository root?"
+  exit 1
+fi
+
+# Install pre-push hook
+PRE_PUSH_HOOK="$HOOKS_DIR/pre-push"
+
+if [ -f "$PRE_PUSH_HOOK" ] && [ ! -L "$PRE_PUSH_HOOK" ]; then
+  echo "⚠️  Existing pre-push hook found"
+  read -p "   Overwrite? (y/N) " -n 1 -r
+  echo
+  if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    echo "   Skipped pre-push hook installation"
+    exit 0
+  fi
+fi
+
+cat > "$PRE_PUSH_HOOK" << 'HOOK_CONTENT'
+#!/bin/bash
+
+# Pre-push hook to prevent pushing panda gems with local path references
+# This prevents accidental pushes with Gemfile entries like:
+#   gem "panda-core", path: "../core"
+
+# ANSI color codes for better output
+RED='\033[0;31m'
+YELLOW='\033[1;33m'
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+echo ""
+echo -e "${BLUE}🔍 Checking for local path references in panda gem Gemfiles...${NC}"
+
+# Define the panda gem directories to check
+PANDA_GEMS=(
+  "core"
+  "cms"
+  "editor"
+  "cms-pro"
+  "ci-tooling"
+)
+
+# Track if any violations are found
+VIOLATIONS_FOUND=0
+CHECKED_COUNT=0
+SKIPPED_COUNT=0
+
+# Function to check if a directory is a separate git repository
+is_separate_repo() {
+  local dir="$1"
+  if [ -d "$dir/.git" ]; then
+    return 0  # True - it's a separate repo
+  fi
+  return 1  # False - not a separate repo
+}
+
+# Function to check if a file is tracked by the current repository
+is_tracked_by_repo() {
+  local file="$1"
+  # Check if the file is tracked by git in this repository
+  git ls-files --error-unmatch "$file" &>/dev/null
+  return $?
+}
+
+# Check each gem's Gemfile for path references
+for gem_dir in "${PANDA_GEMS[@]}"; do
+  GEMFILE="$gem_dir/Gemfile"
+
+  # Skip if Gemfile doesn't exist
+  if [ ! -f "$GEMFILE" ]; then
+    continue
+  fi
+
+  # Skip if this is a separate git repository
+  if is_separate_repo "$gem_dir"; then
+    SKIPPED_COUNT=$((SKIPPED_COUNT + 1))
+    echo -e "${BLUE}⊳ Skipping $gem_dir (separate repository)${NC}"
+    continue
+  fi
+
+  # Skip if the Gemfile is not tracked by this repository
+  if ! is_tracked_by_repo "$GEMFILE"; then
+    SKIPPED_COUNT=$((SKIPPED_COUNT + 1))
+    echo -e "${BLUE}⊳ Skipping $GEMFILE (not tracked by this repository)${NC}"
+    continue
+  fi
+
+  CHECKED_COUNT=$((CHECKED_COUNT + 1))
+
+  # Search for path references to other panda gems
+  # Pattern matches lines like: gem "panda-*", path: "../*"
+  if grep -q 'gem.*"panda-.*path:.*"\.\.' "$GEMFILE"; then
+    VIOLATIONS_FOUND=$((VIOLATIONS_FOUND + 1))
+
+    echo ""
+    echo -e "${RED}❌ VIOLATION FOUND: $gem_dir/Gemfile${NC}"
+    echo -e "${YELLOW}   Found local path references:${NC}"
+
+    # Show the specific lines that are problematic
+    grep 'gem.*"panda-.*path:.*"\.\.' "$GEMFILE" | while read -r line; do
+      echo -e "${YELLOW}   → $line${NC}"
+    done
+
+    echo ""
+    echo -e "${YELLOW}   Please change to version references before pushing:${NC}"
+
+    # Extract gem names and suggest version references
+    grep 'gem.*"panda-.*path:.*"\.\.' "$GEMFILE" | \
+      sed -E 's/.*gem[[:space:]]*"([^"]*)".*path:.*/\1/' | \
+      while read -r gem_name; do
+        echo -e "${GREEN}   gem \"$gem_name\", \"~> 0.X.Y\"${NC}"
+      done
+  fi
+done
+
+echo ""
+
+# Summary
+if [ $VIOLATIONS_FOUND -eq 0 ]; then
+  if [ $CHECKED_COUNT -eq 0 ]; then
+    echo -e "${GREEN}✅ No panda gem Gemfiles in this repository${NC}"
+    if [ $SKIPPED_COUNT -gt 0 ]; then
+      echo -e "${BLUE}   Skipped $SKIPPED_COUNT separate repositories${NC}"
+    fi
+  else
+    echo -e "${GREEN}✅ All checked Gemfiles are clean ($CHECKED_COUNT files checked)${NC}"
+    if [ $SKIPPED_COUNT -gt 0 ]; then
+      echo -e "${BLUE}   Skipped $SKIPPED_COUNT separate repositories${NC}"
+    fi
+  fi
+  echo ""
+  exit 0
+else
+  echo -e "${RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+  echo -e "${RED}🚫 PUSH BLOCKED${NC}"
+  echo -e "${RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+  echo ""
+  echo -e "${RED}Found $VIOLATIONS_FOUND gem(s) with local path references.${NC}"
+  echo ""
+  echo -e "${YELLOW}To fix this:${NC}"
+  echo -e "  1. Update the Gemfile(s) to use version references"
+  echo -e "  2. Ensure the referenced gems are published to RubyGems"
+  echo -e "  3. Run 'bundle install' to update Gemfile.lock"
+  echo -e "  4. Commit the changes"
+  echo -e "  5. Try pushing again"
+  echo ""
+  echo -e "${YELLOW}Tip:${NC} For local development, you can use path references,"
+  echo -e "but they must be changed to version references before pushing."
+  echo ""
+  exit 1
+fi
+HOOK_CONTENT
+
+chmod +x "$PRE_PUSH_HOOK"
+
+echo "✅ Pre-push hook installed successfully!"
+echo ""
+
+# Install lefthook in any repository that has it configured
+echo "🔍 Checking for lefthook in repositories..."
+echo ""
+
+LEFTHOOK_COUNT=0
+
+# Check all subdirectories (excluding hidden dirs, bin, scripts, docs, sites)
+for dir in "$REPO_ROOT"/*/ ; do
+  # Skip if not a directory
+  if [ ! -d "$dir" ]; then
+    continue
+  fi
+
+  # Skip non-repository directories
+  dir_name=$(basename "$dir")
+  case "$dir_name" in
+    bin|scripts|docs|sites|.*)
+      continue
+      ;;
+  esac
+
+  # Skip if not a git repository
+  if [ ! -d "$dir/.git" ]; then
+    # Check subdirectories (like gems/panda-core)
+    for subdir in "$dir"/*/ ; do
+      if [ ! -d "$subdir/.git" ]; then
+        continue
+      fi
+
+      subdir_name=$(basename "$subdir")
+
+      # Check for .lefthook.yml (with dot) and rename to lefthook.yml
+      if [ -f "$subdir/.lefthook.yml" ] && [ ! -f "$subdir/lefthook.yml" ]; then
+        echo "📝 Renaming .lefthook.yml to lefthook.yml in $dir_name/$subdir_name..."
+        (cd "$subdir" && git mv .lefthook.yml lefthook.yml 2>/dev/null || mv .lefthook.yml lefthook.yml)
+      fi
+
+      # Install lefthook if config exists
+      if [ -f "$subdir/lefthook.yml" ]; then
+        echo "📌 Installing lefthook in $dir_name/$subdir_name..."
+        if command -v lefthook &> /dev/null; then
+          (cd "$subdir" && lefthook install > /dev/null 2>&1)
+          echo "   ✓ Lefthook installed"
+          LEFTHOOK_COUNT=$((LEFTHOOK_COUNT + 1))
+        else
+          echo "   ⚠ lefthook command not found (install with: brew install lefthook)"
+        fi
+      fi
+    done
+    continue
+  fi
+
+  # Check for .lefthook.yml (with dot) and rename to lefthook.yml
+  if [ -f "$dir/.lefthook.yml" ] && [ ! -f "$dir/lefthook.yml" ]; then
+    echo "📝 Renaming .lefthook.yml to lefthook.yml in $dir_name..."
+    (cd "$dir" && git mv .lefthook.yml lefthook.yml 2>/dev/null || mv .lefthook.yml lefthook.yml)
+  fi
+
+  # Install lefthook if config exists
+  if [ -f "$dir/lefthook.yml" ]; then
+    echo "📌 Installing lefthook in $dir_name..."
+    if command -v lefthook &> /dev/null; then
+      (cd "$dir" && lefthook install > /dev/null 2>&1)
+      echo "   ✓ Lefthook installed"
+      LEFTHOOK_COUNT=$((LEFTHOOK_COUNT + 1))
+    else
+      echo "   ⚠ lefthook command not found (install with: brew install lefthook)"
+    fi
+  fi
+done
+
+if [ $LEFTHOOK_COUNT -eq 0 ]; then
+  echo "   No repositories with lefthook configuration found"
+else
+  echo ""
+  echo "✅ Lefthook installed in $LEFTHOOK_COUNT repository(ies)"
+fi
+
+echo ""
+echo "The monorepo pre-push hook will check for local path references"
+echo "in panda gem Gemfiles before each push."
+echo ""
+echo "To bypass hooks (not recommended):"
+echo "  git push --no-verify"
+echo ""

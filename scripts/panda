@@ -1,0 +1,209 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Panda Monorepo CLI Tool
+#
+# Usage:
+#   panda css compile    # Compile CSS for all panda gems
+#   panda gems list      # List all panda gems in the monorepo
+#   panda --help         # Show help
+
+require "pathname"
+require "fileutils"
+
+# Find the monorepo root (directory containing this tools/ folder)
+MONOREPO_ROOT = Pathname.new(__dir__).parent.realpath
+
+# ANSI color codes
+COLORS = {
+  reset: "\e[0m",
+  bold: "\e[1m",
+  red: "\e[31m",
+  green: "\e[32m",
+  yellow: "\e[33m",
+  blue: "\e[34m",
+  cyan: "\e[36m"
+}
+
+def colorize(text, color)
+  "#{COLORS[color]}#{text}#{COLORS[:reset]}"
+end
+
+def print_header(text)
+  puts "\n#{colorize("=" * 80, :blue)}"
+  puts colorize(text, :bold)
+  puts colorize("=" * 80, :blue)
+end
+
+def print_success(text)
+  puts "#{colorize("✓", :green)} #{text}"
+end
+
+def print_error(text)
+  puts "#{colorize("✗", :red)} #{text}"
+end
+
+def print_warning(text)
+  puts "#{colorize("⚠", :yellow)} #{text}"
+end
+
+def print_info(text)
+  puts "#{colorize("ℹ", :blue)} #{text}"
+end
+
+# Find all panda gems in the monorepo
+def find_panda_gems
+  gems = []
+  gems_dir = MONOREPO_ROOT / "gems"
+
+  if gems_dir.directory?
+    gems_dir.children.select(&:directory?).each do |gem_dir|
+      gemspec = gem_dir.glob("*.gemspec").first
+      gems << {
+        name: gem_dir.basename.to_s,
+        path: gem_dir,
+        gemspec: gemspec
+      } if gemspec
+    end
+  end
+
+  gems.sort_by { |g| g[:name] }
+end
+
+def command_gems_list
+  print_header "Panda Gems in Monorepo"
+
+  gems = find_panda_gems
+
+  if gems.empty?
+    print_warning "No panda gems found in #{MONOREPO_ROOT / "gems"}"
+    return
+  end
+
+  puts "\n#{colorize("Found #{gems.length} gem(s):", :bold)}\n"
+  gems.each do |gem|
+    puts "  • #{colorize(gem[:name], :cyan)} (#{gem[:path].relative_path_from(MONOREPO_ROOT)})"
+  end
+  puts ""
+end
+
+def command_css_compile
+  print_header "Panda CSS Compilation (All Gems)"
+
+  gems = find_panda_gems
+
+  if gems.empty?
+    print_error "No panda gems found in #{MONOREPO_ROOT / "gems"}"
+    exit 1
+  end
+
+  # Find panda-core (required for compilation)
+  core_gem = gems.find { |g| g[:name] == "panda-core" }
+  unless core_gem
+    print_error "panda-core gem not found - required for CSS compilation"
+    exit 1
+  end
+
+  puts "\n#{colorize("📦 Found #{gems.length} gem(s):", :bold)}"
+  gems.each do |gem|
+    puts "   • #{gem[:name]}"
+  end
+  puts ""
+
+  # Check if panda-core has a dummy app
+  dummy_app = core_gem[:path] / "spec" / "dummy"
+  unless dummy_app.directory?
+    print_error "panda-core dummy app not found at #{dummy_app}"
+    exit 1
+  end
+
+  # Check if Rakefile exists
+  rakefile = dummy_app / "Rakefile"
+  unless rakefile.file?
+    print_error "Rakefile not found at #{rakefile}"
+    exit 1
+  end
+
+  print_info "Using panda-core dummy app: #{dummy_app.relative_path_from(MONOREPO_ROOT)}"
+  print_info "This will compile CSS for all loaded modules"
+  puts ""
+
+  # Change to dummy app directory and run the rake task
+  Dir.chdir(dummy_app) do
+    print_info "Running: bundle exec rake panda:compile_css"
+    puts ""
+
+    # Run the rake task
+    system("bundle", "exec", "rake", "panda:compile_css")
+
+    if $?.success?
+      puts ""
+      print_success "CSS compilation completed successfully"
+    else
+      puts ""
+      print_error "CSS compilation failed"
+      exit 1
+    end
+  end
+end
+
+def show_help
+  puts <<~HELP
+    #{colorize("Panda Monorepo CLI", :bold)}
+
+    #{colorize("Usage:", :cyan)}
+      panda <command> [options]
+
+    #{colorize("Commands:", :cyan)}
+      #{colorize("css compile", :green)}     Compile CSS for all panda gems
+      #{colorize("gems list", :green)}       List all panda gems in the monorepo
+      #{colorize("--help, -h", :green)}      Show this help message
+
+    #{colorize("Examples:", :cyan)}
+      panda css compile
+      panda gems list
+
+    #{colorize("Description:", :cyan)}
+      The panda CLI tool provides utilities for working with the panda
+      monorepo. It can find and operate on all panda gems from any
+      directory within the monorepo.
+
+    #{colorize("CSS Compilation:", :cyan)}
+      The 'css compile' command uses panda-core's dummy Rails app to
+      load all panda gems and compile a unified CSS file that includes
+      Tailwind classes from all modules. The output is written to:
+        gems/panda-core/public/panda-core-assets/panda-core.css
+
+  HELP
+end
+
+# Parse command line arguments
+command = ARGV[0]
+subcommand = ARGV[1]
+
+case command
+when "css"
+  case subcommand
+  when "compile"
+    command_css_compile
+  else
+    print_error "Unknown css subcommand: #{subcommand}"
+    puts "Run 'panda --help' for usage information"
+    exit 1
+  end
+when "gems"
+  case subcommand
+  when "list"
+    command_gems_list
+  else
+    print_error "Unknown gems subcommand: #{subcommand}"
+    puts "Run 'panda --help' for usage information"
+    exit 1
+  end
+when "--help", "-h", nil
+  show_help
+else
+  print_error "Unknown command: #{command}"
+  puts "Run 'panda --help' for usage information"
+  exit 1
+end
