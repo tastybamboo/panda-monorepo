@@ -1,6 +1,6 @@
 # Panda Monorepo
 
-A development workspace for the Panda CMS ecosystem, automatically managing multiple gem repositories and providing unified tooling.
+A development workspace for the [Panda CMS](https://github.com/tastybamboo/panda-cms) ecosystem, automatically managing multiple gem repositories and providing unified tooling.
 
 ## Quick Start
 
@@ -20,7 +20,7 @@ The `init` script will:
 - ✅ Clone gems you have access to into `gems/` directory
 - ✅ Clone automation tools into `automation/` directory
 - ✅ Clone supporting repositories (generator)
-- ✅ Install git hooks (including lefthook where configured)
+- ✅ Install git hooks (including [`lefthook`](https://github.com/evilmartians/lefthook) where configured)
 - ✅ Set up the `panda` CLI tool
 
 ### Adding to Your PATH
@@ -126,13 +126,13 @@ gem "panda-core", "~> 0.3.0"
 
 ### Lefthook (Per-Repository)
 
-The setup automatically installs lefthook in repositories that have it configured:
+The setup automatically installs [`lefthook`](https://github.com/evilmartians/lefthook) in repositories that have it configured:
 
 - Discovers `lefthook.yml` or `.lefthook.yml` in any cloned repo
 - Renames `.lefthook.yml` → `lefthook.yml` (if needed)
 - Runs `lefthook install` to set up hooks
 
-Install lefthook if you don't have it:
+Install [`lefthook`](https://github.com/evilmartians/lefthook) if you don't have it:
 
 ```bash
 brew install lefthook
@@ -220,7 +220,7 @@ This monorepo includes Claude Code configuration with:
 
 ## Repository Discovery
 
-The `init` script uses GitHub CLI to auto-discover repositories:
+The `init` script uses [GitHub CLI](https://cli.github.com/) to auto-discover repositories:
 
 ```bash
 # Requirements
@@ -238,6 +238,19 @@ Discovery process:
 5. Skips repos you don't have access to (gracefully)
 
 ## Contributing
+
+We welcome contributions to the Panda ecosystem! Please read our [Contributing Guide](CONTRIBUTING.md) and [Code of Conduct](CODE_OF_CONDUCT.md) before submitting contributions.
+
+### Quick Start for Contributors
+
+1. **Fork and clone** the repository
+2. **Run `./init`** to set up your development environment
+3. **Create a feature branch** for your changes
+4. **Make your changes** and add tests
+5. **Run tests and linters** to ensure quality
+6. **Submit a pull request** with a clear description
+
+For detailed contribution guidelines, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ### Adding a New Panda Gem
 
@@ -294,6 +307,8 @@ brew install lefthook
 ./init
 ```
 
+Learn more about [`lefthook`](https://github.com/evilmartians/lefthook).
+
 ### Git Hooks Not Working
 
 ```bash
@@ -332,4 +347,6 @@ This keeps the monorepo lightweight and focused on tooling, not code.
 
 ## License
 
-Each gem has its own license. This monorepo infrastructure is MIT licensed.
+This monorepo infrastructure is BSD 3-Clause licensed. See [LICENSE](LICENSE) for details.
+
+Individual Panda gems are also BSD 3-Clause licensed. Check the LICENSE file in each gem directory for specifics.
