@@ -130,6 +130,23 @@ def command_css_compile
 
   # Change to dummy app directory and run the rake task
   Dir.chdir(dummy_app) do
+    # Check if bundle is properly installed
+    print_info "Checking bundle dependencies..."
+    bundle_check = system("bundle", "check", out: File::NULL, err: File::NULL)
+
+    unless bundle_check
+      print_warning "Bundle dependencies not satisfied. Running bundle install..."
+      puts ""
+      unless system("bundle", "install")
+        puts ""
+        print_error "Bundle install failed!"
+        print_info "If you don't have access to private gems (like panda-cms-pro), this is expected."
+        print_info "The Gemfile will skip unavailable gems automatically."
+        print_info "If the error persists, check your gem access and Gemfile configuration."
+        exit 1
+      end
+    end
+
     print_info "Running: bundle exec rake panda:compile_css"
     puts ""
 
@@ -142,6 +159,7 @@ def command_css_compile
     else
       puts ""
       print_error "CSS compilation failed"
+      print_info "Check the error output above for details."
       exit 1
     end
   end
