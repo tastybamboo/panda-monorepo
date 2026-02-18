@@ -26,6 +26,74 @@
 - When making changes to panda- gems, check through all panda- gems (including panda-cms, panda-core, panda-editor, cms-pro, etc.) to see if changes are required there too.
 - The panda gems shouldn't have knowledge about containing/host apps, and should not reference them directly.
 - In panda-*, all icons have to be fa-solid or fab (for brands) because it's fontawesome free
+
+## Admin UI: ViewComponent Requirements
+
+All admin pages across panda gems and host apps (neurobetter, etc.) **must** use panda-core ViewComponents. Never write raw HTML with inline Tailwind classes for admin screens.
+
+### Required Components for Admin Pages
+
+| Component | Purpose | Usage |
+|-----------|---------|-------|
+| `ContainerComponent` | Page wrapper with heading | Every admin page must be wrapped in this |
+| `SearchFilterBarComponent` | Search input + filter dropdowns | Use for any page with search/filter UI. Provides `renders_many :filters` slot and `select_classes` helper |
+| `TableComponent` | Data tables with column DSL | Use instead of raw `<table>` HTML. Provides alternating rows, hover states, rounded card style |
+| `TagComponent` | Status badges | Use for status/state indicators (`:active`, `:draft`, `:inactive`, `:auto`) |
+| `EmptyStateComponent` | Empty state with icon/title | Use when a table/list has no results |
+| `PaginationComponent` | Page numbers with prev/next | Use for any paginated listing |
+| `ButtonComponent` | Styled buttons/links | Use for action buttons. For `button_to` (form submissions), apply ButtonComponent's CSS classes directly |
+| `PanelComponent` | Content panels | Use for grouped form sections |
+
+### Anti-Patterns (Never Do This)
+
+- **No hardcoded color classes**: Never use `bg-blue-600`, `focus:border-blue-500`, etc. Use components which use `primary-600` design tokens
+- **No raw `<table>` HTML**: Always use `TableComponent` with `table.column("Name") { |row| row.name }`
+- **No inline status badges**: Never write `<span class="bg-green-100 text-green-800">`. Use `TagComponent`
+- **No raw search forms**: Use `SearchFilterBarComponent` instead of building search/filter forms from scratch
+- **No raw `<div class="p-6">` wrappers**: Use `ContainerComponent`
+
+### Example: Standard Admin Index Page
+
+```erb
+<%%= render Panda::Core::Admin::ContainerComponent.new do |component| %>
+  <%% component.with_heading_slot(text: "Items", level: 1) %>
+
+  <%%= render Panda::Core::Admin::SearchFilterBarComponent.new(
+    url: admin_items_path,
+    search_value: params[:q],
+    search_placeholder: "Search items...",
+    show_clear: params[:q].present? || params[:status].present?
+  ) do |bar| %>
+    <%% bar.with_filter do %>
+      <%%= select_tag :status, options_for_select([["All", ""], ["Active", "active"]], params[:status]),
+        class: bar.select_classes %>
+    <%% end %>
+  <%% end %>
+
+  <%% if @items.any? %>
+    <%%= render Panda::Core::Admin::TableComponent.new(term: "item", rows: @items) do |table| %>
+      <%% table.column("Name") { |item| item.name } %>
+      <%% table.column("Status") { |item| render Panda::Core::Admin::TagComponent.new(text: item.status.humanize, status: item.active? ? :active : :draft) } %>
+    <%% end %>
+  <%% else %>
+    <%%= render Panda::Core::Admin::EmptyStateComponent.new(
+      icon: "fa-solid fa-box", title: "No items found",
+      description: "Try adjusting your search criteria."
+    ) %>
+  <%% end %>
+
+  <%%= render Panda::Core::Admin::PaginationComponent.new(
+    page: @page, total_pages: @total_pages, total_count: @total_count,
+    per_page: PER_PAGE, item_name: "items"
+  ) %>
+<%% end %>
+```
+
+### Reference Implementations
+
+- **Gold standard**: `gems/panda-core/app/views/panda/core/admin/users/index.html.erb`
+- **Host app example**: `sites/neurobetter/app/views/admin/members/onboarding/index.html.erb`
+- **Components source**: `gems/panda-core/app/components/panda/core/admin/`
 - 1. Always commit the PostgreSQL schema.rb (since PostgreSQL is your primary database):
   git restore spec/dummy/db/schema.rb
   2. Use db:schema:load in CI ✅ Already done!
