@@ -15,7 +15,39 @@
   - Run `bin/setup-hooks` to install the hook if not already set up (or use `bin/setup` for complete setup)
   - The hook checks: core, cms, editor, cms-pro, and ci-tooling directories
 - When we update version.rb in any project, we need to also run a bundle update
+- Always run `bundle update --all` before committing changes
 - Always run "yamllint -c .yamllint ." if you make changes to .yml or .yaml files.
+
+## Panda CLI Tool
+
+A monorepo CLI is available at `~/Projects/panda/bin/panda`.
+Run from `~/Projects/panda`:
+
+- `bin/panda css compile` — Compile CSS for all panda gems (uses panda-core's dummy app)
+- `bin/panda gems list` — List all panda gems in the monorepo
+- `bin/panda deps graph` — Show dependency graph in topological order
+- `bin/panda deps check` — Check if gem lock files are in sync with upstream
+- `bin/panda deps sync` — Update and push Gemfile.lock for all downstream gems
+
+### When to run `bin/panda deps sync`
+
+Run `bin/panda deps sync` after merging a PR in any upstream panda gem (e.g. panda-core, panda-editor).
+It walks the dependency graph in topological order, runs `bundle update` for each downstream gem,
+and commits/pushes the updated Gemfile.lock. This keeps all gems pointing at the latest revisions.
+
+### Panda CSS Compilation
+
+When Tailwind classes change in any panda gem template, CSS must be recompiled:
+
+1. **From a host app** (preferred): `bundle exec rake panda:compile_css`
+   - Run from neurobetter or another host app that loads all panda modules
+   - This ensures Tailwind sees every template across all gems
+2. **From the monorepo root**: `panda css compile`
+   - Uses panda-core's dummy app instead of a host app
+   - May not see classes from host-app-specific templates
+3. Output goes to `panda-core/public/panda-core-assets/panda-core.css`
+4. Commit and push the CSS changes in `panda-core`
+5. Run `bin/panda deps sync` or `bundle update panda-core` in downstream gems to pick up the new commit
 
 ## PR Readiness Checker Agent
 
