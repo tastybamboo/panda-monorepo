@@ -93,6 +93,29 @@ panda gems list
 
 # Compile CSS for all gems
 panda css compile
+
+# Show dependency graph in topological order
+panda deps graph
+
+# Check if gem lock files are in sync with upstream
+panda deps check
+
+# Update and push Gemfile.lock for all downstream gems
+panda deps sync
+```
+
+### Listing Gems
+
+```
+$ panda gems list
+
+Found 6 gem(s):
+  • panda-cms (gems/panda-cms)
+  • panda-cms-pro (gems/panda-cms-pro)
+  • panda-core (gems/panda-core)
+  • panda-editor (gems/panda-editor)
+  • panda-helpdesk (gems/panda-helpdesk)
+  • panda-website-users (gems/panda-website-users)
 ```
 
 ### CSS Compilation
@@ -109,6 +132,85 @@ This:
 - Compiles Tailwind CSS with all utility classes
 - Outputs to `gems/panda-core/public/panda-core-assets/panda-core.css`
 - Creates versioned copy for releases
+
+### Dependency Management
+
+After merging a PR in an upstream gem (e.g. panda-core), downstream gems need their `Gemfile.lock` updated to point at the new commit. The `deps` commands automate this.
+
+#### `panda deps graph`
+
+Shows the dependency tree in topological order (updated first → last):
+
+```
+$ panda deps graph
+
+Topological order (updated first → last):
+  1. panda-core [gem]
+  2. panda-editor [gem]
+  3. panda-cms [gem]
+     ├── panda-core
+     └── panda-editor
+  4. panda-cms-pro [gem]
+     ├── panda-core
+     └── panda-cms
+  5. panda-helpdesk [gem]
+     └── panda-core
+  6. sample-website [site]
+     ├── panda-core
+     ├── panda-cms
+     ├── panda-editor
+     ├── panda-cms-pro
+     └── panda-helpdesk
+  7. panda-website-users [gem]
+     └── panda-core (gemspec only — skipped during sync)
+
+Syncable projects: panda-cms, panda-cms-pro, panda-helpdesk, sample-website
+Skipped during sync: panda-website-users (gemspec-only deps)
+```
+
+#### `panda deps check`
+
+Read-only check showing whether each gem's `Gemfile.lock` is in sync with its upstream dependencies:
+
+```
+$ panda deps check
+
+panda-core (gems/panda-core)
+ℹ Branch: main
+ℹ Working tree: clean
+ℹ Local/remote: up to date
+
+panda-cms (gems/panda-cms)
+ℹ Branch: main
+ℹ Working tree: clean
+ℹ Local/remote: up to date
+✓ panda-core: in sync (984ba9ac)
+✓ panda-editor: in sync (460e9c9d)
+
+sample-website (sites/sample-website)
+ℹ Branch: main
+⚠ Local/remote: not up to date
+✓ panda-core: in sync (984ba9ac)
+✓ panda-cms: in sync (2faf1d7a)
+
+✓ All dependencies are in sync.
+```
+
+#### `panda deps sync`
+
+Automatically walks the dependency graph and updates all downstream `Gemfile.lock` files:
+
+```bash
+# Update all downstream gems after merging a PR in panda-core
+panda deps sync
+```
+
+This will:
+1. Process gems in topological order (leaves first)
+2. Stash any uncommitted changes and switch to `main`
+3. Run `bundle update` for each gem's panda dependencies
+4. Commit and push the updated `Gemfile.lock`
+5. Restore your original branch and stashed changes
 
 ## Git Hooks
 

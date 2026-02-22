@@ -6,12 +6,16 @@
 # Usage:
 #   panda css compile    # Compile CSS for all panda gems
 #   panda gems list      # List all panda gems in the monorepo
+#   panda deps graph     # Show dependency graph
+#   panda deps check     # Check dependency sync status
+#   panda deps sync      # Update dependencies across gems
 #   panda --help         # Show help
 
 require "pathname"
 require "fileutils"
+require "open3"
 
-# Find the monorepo root (directory containing this tools/ folder)
+# Find the monorepo root (directory containing this scripts/ folder)
 MONOREPO_ROOT = Pathname.new(__dir__).parent.realpath
 
 # ANSI color codes
@@ -22,8 +26,11 @@ COLORS = {
   green: "\e[32m",
   yellow: "\e[33m",
   blue: "\e[34m",
-  cyan: "\e[36m"
+  cyan: "\e[36m",
+  dim: "\e[2m"
 }
+
+Project = Struct.new(:name, :path, :type, :panda_deps, keyword_init: true)
 
 def colorize(text, color)
   "#{COLORS[color]}#{text}#{COLORS[:reset]}"
@@ -69,6 +76,462 @@ def find_panda_gems
 
   gems.sort_by { |g| g[:name] }
 end
+
+# ---------------------------------------------------------------------------
+# DependencyManager — cross-gem dependency discovery, ordering and syncing
+# ---------------------------------------------------------------------------
+class DependencyManager
+  attr_reader :projects
+
+  def initialize
+    @projects = discover_projects
+  end
+
+  # --- Discovery ----------------------------------------------------------
+
+  def discover_projects
+    projects = []
+
+    # Scan gems/
+    gems_dir = MONOREPO_ROOT / "gems"
+    if gems_dir.directory?
+      gems_dir.children.select(&:directory?).each do |dir|
+        next unless dir.glob("*.gemspec").any?
+        deps = parse_panda_dependencies(dir)
+        projects << Project.new(
+          name: dir.basename.to_s,
+          path: dir,
+          type: :gem,
+          panda_deps: deps
+        )
+      end
+    end
+
+    # Scan sites/
+    sites_dir = MONOREPO_ROOT / "sites"
+    if sites_dir.directory?
+      sites_dir.children.select(&:directory?).each do |dir|
+        next unless (dir / "Gemfile").file?
+        deps = parse_panda_dependencies(dir)
+        next if deps.empty? # not a panda-related site
+        projects << Project.new(
+          name: dir.basename.to_s,
+          path: dir,
+          type: :site,
+          panda_deps: deps
+        )
+      end
+    end
+
+    projects.sort_by(&:name)
+  end
+
+  # Parse a Gemfile for panda-* dependencies.
+  # Returns a hash: { "panda-core" => :github, "panda-editor" => :gemspec, ... }
+  def parse_panda_dependencies(dir)
+    gemfile = dir / "Gemfile"
+    return {} unless gemfile.file?
+
+    deps = {}
+    content = gemfile.read
+
+    content.each_line do |line|
+      line = line.strip
+      next if line.start_with?("#")
+      next unless line.match?(/gem\s+["']panda-/)
+
+      match = line.match(/gem\s+["'](panda-[^"']+)["']/)
+      next unless match
+      gem_name = match[1]
+
+      # Don't record self-dependency
+      next if gem_name == dir.basename.to_s
+
+      if line.include?("github:")
+        deps[gem_name] = :github
+      else
+        deps[gem_name] = :gemspec
+      end
+    end
+
+    deps
+  end
+
+  # --- Topological sort ---------------------------------------------------
+
+  # Returns projects in dependency order (leaves first) using Kahn's algorithm.
+  # Only considers projects present in the monorepo.
+  def build_dependency_graph
+    known = @projects.map(&:name).to_set
+    by_name = @projects.each_with_object({}) { |p, h| h[p.name] = p }
+
+    # in_degree counts how many (known) deps each project has
+    in_degree = {}
+    adjacency = {} # dep -> list of dependents
+    @projects.each do |proj|
+      in_degree[proj.name] ||= 0
+      proj.panda_deps.each_key do |dep|
+        next unless known.include?(dep)
+        in_degree[proj.name] += 1
+        (adjacency[dep] ||= []) << proj.name
+      end
+    end
+
+    queue = @projects.select { |p| in_degree[p.name] == 0 }.map(&:name).sort
+    sorted = []
+
+    until queue.empty?
+      name = queue.shift
+      sorted << by_name[name]
+      (adjacency[name] || []).each do |dependent|
+        in_degree[dependent] -= 1
+        queue << dependent if in_degree[dependent] == 0
+      end
+      queue.sort!
+    end
+
+    if sorted.size != @projects.size
+      remaining = @projects.map(&:name) - sorted.map(&:name)
+      raise "Circular dependency detected among: #{remaining.join(", ")}"
+    end
+
+    sorted
+  end
+
+  # --- Git helpers --------------------------------------------------------
+
+  def git_status(project)
+    dir = project.path.to_s
+    branch = capture("git", "-C", dir, "rev-parse", "--abbrev-ref", "HEAD").strip
+    head_sha = capture("git", "-C", dir, "rev-parse", "HEAD").strip
+
+    clean = capture("git", "-C", dir, "status", "--porcelain").strip.empty?
+
+    # Check if up to date with remote
+    system("git", "-C", dir, "fetch", "--quiet", out: File::NULL, err: File::NULL)
+    local = capture("git", "-C", dir, "rev-parse", "HEAD").strip
+    remote = capture("git", "-C", dir, "rev-parse", "origin/#{branch}").strip rescue nil
+    up_to_date = remote ? (local == remote) : nil
+
+    {
+      branch: branch,
+      on_main: branch == "main",
+      clean: clean,
+      up_to_date: up_to_date,
+      head_sha: head_sha
+    }
+  end
+
+  def remote_head_sha(project)
+    dir = project.path.to_s
+    system("git", "-C", dir, "fetch", "--quiet", out: File::NULL, err: File::NULL)
+    capture("git", "-C", dir, "rev-parse", "origin/main").strip
+  rescue
+    nil
+  end
+
+  # Parse Gemfile.lock GIT sections to find the locked revision for a dependency.
+  def lock_revision_for(project, dep_name)
+    lockfile = project.path / "Gemfile.lock"
+    return nil unless lockfile.file?
+
+    content = lockfile.read
+    # GIT sections look like:
+    #   GIT
+    #     remote: https://github.com/tastybamboo/panda-core.git
+    #     revision: 3a4523dde93b1cc14006af5561a36bcd32401942
+    #     branch: main
+    sections = content.split(/^GIT\n/)
+    sections.each do |section|
+      next unless section.include?("tastybamboo/#{dep_name}.git")
+      rev_match = section.match(/revision:\s+([0-9a-f]+)/)
+      return rev_match[1] if rev_match
+    end
+
+    nil
+  end
+
+  private
+
+  def capture(*cmd)
+    stdout, _stderr, _status = Open3.capture3(*cmd)
+    stdout
+  end
+end
+
+# ---------------------------------------------------------------------------
+# deps graph — display dependency tree
+# ---------------------------------------------------------------------------
+def command_deps_graph
+  print_header "Panda Dependency Graph"
+
+  mgr = DependencyManager.new
+  ordered = mgr.build_dependency_graph
+
+  puts "\n#{colorize("Topological order (updated first → last):", :bold)}\n"
+
+  ordered.each_with_index do |proj, i|
+    type_label = proj.type == :site ? colorize("[site]", :yellow) : colorize("[gem]", :cyan)
+    puts "  #{i + 1}. #{colorize(proj.name, :bold)} #{type_label}"
+
+    github_deps = proj.panda_deps.select { |_, v| v == :github }
+    gemspec_deps = proj.panda_deps.select { |_, v| v == :gemspec }
+
+    all_deps = github_deps.keys + gemspec_deps.keys
+    all_deps.each_with_index do |dep, di|
+      connector = di == all_deps.size - 1 ? "└──" : "├──"
+      kind = proj.panda_deps[dep]
+      suffix = kind == :gemspec ? colorize(" (gemspec only — skipped during sync)", :dim) : ""
+      puts "     #{connector} #{dep}#{suffix}"
+    end
+  end
+
+  # Summary
+  syncable = ordered.select { |p| p.panda_deps.any? { |_, v| v == :github } }
+  puts "\n#{colorize("Syncable projects:", :bold)} #{syncable.map(&:name).join(", ")}"
+  skipped = ordered.select { |p| p.panda_deps.all? { |_, v| v != :github } && p.panda_deps.any? }
+  if skipped.any?
+    puts "#{colorize("Skipped during sync:", :bold)} #{skipped.map(&:name).join(", ")} (gemspec-only deps)"
+  end
+  puts ""
+end
+
+# ---------------------------------------------------------------------------
+# deps check — read-only status report
+# ---------------------------------------------------------------------------
+def command_deps_check
+  print_header "Panda Dependency Status Check"
+
+  mgr = DependencyManager.new
+  ordered = mgr.build_dependency_graph
+  by_name = mgr.projects.each_with_object({}) { |p, h| h[p.name] = p }
+
+  stale_count = 0
+  error_count = 0
+
+  ordered.each do |proj|
+    puts "\n#{colorize(proj.name, :bold)} (#{proj.path.relative_path_from(MONOREPO_ROOT)})"
+
+    # Git status
+    begin
+      status = mgr.git_status(proj)
+    rescue => e
+      print_error "  Could not read git status: #{e.message}"
+      error_count += 1
+      next
+    end
+
+    branch_color = status[:on_main] ? :green : :yellow
+    print_info "  Branch: #{colorize(status[:branch], branch_color)}"
+    print_info "  Working tree: #{status[:clean] ? colorize("clean", :green) : colorize("uncommitted changes", :yellow)}"
+    if status[:up_to_date] == false
+      print_warning "  Local/remote: #{colorize("not up to date", :yellow)}"
+    elsif status[:up_to_date]
+      print_info "  Local/remote: #{colorize("up to date", :green)}"
+    end
+
+    # Check each github dep
+    github_deps = proj.panda_deps.select { |_, v| v == :github }
+    next if github_deps.empty?
+
+    github_deps.each_key do |dep_name|
+      dep_proj = by_name[dep_name]
+      locked_rev = mgr.lock_revision_for(proj, dep_name)
+
+      unless dep_proj
+        print_warning "  #{dep_name}: not found in monorepo"
+        next
+      end
+
+      begin
+        remote_sha = mgr.remote_head_sha(dep_proj)
+      rescue => e
+        print_error "  #{dep_name}: could not fetch remote HEAD — #{e.message}"
+        error_count += 1
+        next
+      end
+
+      if locked_rev.nil?
+        print_warning "  #{dep_name}: no locked revision found in Gemfile.lock"
+      elsif remote_sha && locked_rev == remote_sha
+        print_success "  #{dep_name}: #{colorize("in sync", :green)} (#{locked_rev[0..7]})"
+      elsif remote_sha
+        stale_count += 1
+        print_warning "  #{dep_name}: #{colorize("stale", :yellow)} — locked #{locked_rev[0..7]}, remote #{remote_sha[0..7]}"
+      end
+    end
+  end
+
+  # Summary
+  puts ""
+  if stale_count == 0 && error_count == 0
+    print_success "All dependencies are in sync."
+  else
+    print_warning "#{stale_count} stale dep(s) found." if stale_count > 0
+    print_error "#{error_count} error(s) encountered." if error_count > 0
+    print_info "Run #{colorize("panda deps sync", :cyan)} to update."
+  end
+  puts ""
+end
+
+# ---------------------------------------------------------------------------
+# deps sync — automated dependency update workflow
+# ---------------------------------------------------------------------------
+def command_deps_sync
+  print_header "Panda Dependency Sync"
+
+  mgr = DependencyManager.new
+  ordered = mgr.build_dependency_graph
+
+  # Only sync projects that have :github deps
+  syncable = ordered.select { |p| p.panda_deps.any? { |_, v| v == :github } }
+
+  if syncable.empty?
+    print_info "No projects with github dependencies to sync."
+    return
+  end
+
+  puts "\n#{colorize("Will process #{syncable.size} project(s) in dependency order:", :bold)}"
+  syncable.each_with_index { |p, i| puts "  #{i + 1}. #{p.name}" }
+  puts ""
+
+  updated = []
+  skipped = []
+  errors = []
+
+  syncable.each do |proj|
+    puts colorize("─" * 60, :blue)
+    puts "#{colorize("▸", :cyan)} #{colorize(proj.name, :bold)}"
+
+    dir = proj.path.to_s
+    stashed = false
+    original_branch = nil
+
+    # Read current state
+    begin
+      status = mgr.git_status(proj)
+    rescue => e
+      print_error "  Could not read git status: #{e.message}"
+      errors << proj.name
+      next
+    end
+
+    # Stash uncommitted changes if dirty
+    unless status[:clean]
+      print_info "  Stashing uncommitted changes..."
+      stash_ok = system("git", "-C", dir, "stash", "--quiet")
+      unless stash_ok
+        print_error "  git stash failed"
+        errors << proj.name
+        next
+      end
+      stashed = true
+    end
+
+    # Switch to main if on a feature branch
+    unless status[:on_main]
+      original_branch = status[:branch]
+      print_info "  Switching from '#{original_branch}' to main..."
+      checkout_ok = system("git", "-C", dir, "checkout", "main", "--quiet", err: File::NULL)
+      unless checkout_ok
+        print_error "  git checkout main failed"
+        # Restore stash before bailing
+        system("git", "-C", dir, "stash", "pop", "--quiet") if stashed
+        errors << proj.name
+        next
+      end
+    end
+
+    # Helper to restore original branch and stash on error or completion
+    restore = -> {
+      if original_branch
+        print_info "  Switching back to '#{original_branch}'..."
+        system("git", "-C", dir, "checkout", original_branch, "--quiet", err: File::NULL)
+      end
+      if stashed
+        print_info "  Restoring stashed changes..."
+        pop_ok = system("git", "-C", dir, "stash", "pop", "--quiet", err: File::NULL)
+        unless pop_ok
+          # Stash pop can conflict on Gemfile.lock since we just committed a new one.
+          # Resolve by taking the committed version and clearing the merge state.
+          print_warning "  Stash pop had conflicts — resolving Gemfile.lock to committed version..."
+          system("git", "-C", dir, "checkout", "--ours", "Gemfile.lock", err: File::NULL)
+          system("git", "-C", dir, "reset", "Gemfile.lock", out: File::NULL, err: File::NULL)
+          system("git", "-C", dir, "checkout", "--", "Gemfile.lock", err: File::NULL)
+        end
+      end
+    }
+
+    # Pull latest
+    print_info "  Pulling latest..."
+    pull_ok = system("git", "-C", dir, "pull", "--ff-only", "--quiet", out: File::NULL, err: File::NULL)
+    unless pull_ok
+      print_error "  git pull --ff-only failed (diverged from remote?)"
+      restore.call
+      errors << proj.name
+      next
+    end
+
+    # Bundle update only the panda github deps
+    github_dep_names = proj.panda_deps.select { |_, v| v == :github }.keys
+    print_info "  Updating: #{github_dep_names.join(", ")}"
+
+    bundle_cmd = ["bundle", "update", *github_dep_names]
+    bundle_ok = system(*bundle_cmd, chdir: dir, out: File::NULL, err: File::NULL)
+    unless bundle_ok
+      print_error "  bundle update failed"
+      restore.call
+      errors << proj.name
+      next
+    end
+
+    # Check if Gemfile.lock changed
+    lock_diff = `git -C #{dir} diff --name-only Gemfile.lock`.strip
+    if lock_diff.empty?
+      print_success "  Already up to date"
+      restore.call
+      next
+    end
+
+    # Commit and push
+    print_info "  Gemfile.lock changed — committing..."
+    system("git", "-C", dir, "add", "Gemfile.lock")
+    commit_ok = system("git", "-C", dir, "commit", "-m", "Update panda gem dependencies", out: File::NULL, err: File::NULL)
+    unless commit_ok
+      print_error "  git commit failed"
+      restore.call
+      errors << proj.name
+      next
+    end
+
+    print_info "  Pushing to origin/main..."
+    push_ok = system("git", "-C", dir, "push", "--quiet", out: File::NULL, err: File::NULL)
+    unless push_ok
+      print_error "  git push failed — commit is local, push manually"
+      restore.call
+      errors << proj.name
+      next
+    end
+
+    print_success "  Updated and pushed"
+    updated << proj.name
+    restore.call
+  end
+
+  # Summary
+  puts ""
+  puts colorize("─" * 60, :blue)
+  puts colorize("Summary:", :bold)
+  print_success "Updated: #{updated.join(", ")}" if updated.any?
+  print_success "Updated: (none)" if updated.empty?
+  print_warning "Skipped: #{skipped.join("; ")}" if skipped.any?
+  print_error "Errors: #{errors.join(", ")}" if errors.any?
+  puts ""
+end
+
+# ---------------------------------------------------------------------------
+# Existing commands
+# ---------------------------------------------------------------------------
 
 def command_gems_list
   print_header "Panda Gems in Monorepo"
@@ -175,11 +638,17 @@ def show_help
     #{colorize("Commands:", :cyan)}
       #{colorize("css compile", :green)}     Compile CSS for all panda gems
       #{colorize("gems list", :green)}       List all panda gems in the monorepo
+      #{colorize("deps graph", :green)}      Show dependency graph in topological order
+      #{colorize("deps check", :green)}      Check if gem lock files are in sync with upstream
+      #{colorize("deps sync", :green)}       Update and push Gemfile.lock for all downstream gems
       #{colorize("--help, -h", :green)}      Show this help message
 
     #{colorize("Examples:", :cyan)}
       panda css compile
       panda gems list
+      panda deps graph
+      panda deps check
+      panda deps sync
 
     #{colorize("Description:", :cyan)}
       The panda CLI tool provides utilities for working with the panda
@@ -191,6 +660,12 @@ def show_help
       load all panda gems and compile a unified CSS file that includes
       Tailwind classes from all modules. The output is written to:
         gems/panda-core/public/panda-core-assets/panda-core.css
+
+    #{colorize("Dependency Management:", :cyan)}
+      The 'deps' commands help manage cross-gem dependencies. After
+      merging a PR in a upstream gem (e.g. panda-core), downstream
+      gems need their Gemfile.lock updated. The 'deps sync' command
+      automates this in the correct topological order.
 
   HELP
 end
@@ -215,6 +690,19 @@ when "gems"
     command_gems_list
   else
     print_error "Unknown gems subcommand: #{subcommand}"
+    puts "Run 'panda --help' for usage information"
+    exit 1
+  end
+when "deps"
+  case subcommand
+  when "graph"
+    command_deps_graph
+  when "check"
+    command_deps_check
+  when "sync"
+    command_deps_sync
+  else
+    print_error "Unknown deps subcommand: #{subcommand}"
     puts "Run 'panda --help' for usage information"
     exit 1
   end
