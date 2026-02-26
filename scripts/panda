@@ -391,7 +391,64 @@ def command_deps_sync
     return
   end
 
-  puts "\n#{colorize("Will process #{syncable.size} project(s) in dependency order:", :bold)}"
+  # --- Ensure upstream gems are on main and up to date ---------------------
+  # Upstream gems (e.g. panda-core, panda-editor) are dependencies of syncable
+  # projects but have no panda github deps themselves, so they aren't in the
+  # syncable list. bundle update in downstream gems fetches from origin/main,
+  # so these must be on main and pushed before we start.
+  syncable_names = syncable.map(&:name).to_set
+  upstream_dep_names = syncable.flat_map { |p| p.panda_deps.select { |_, v| v == :github }.keys }.uniq
+  by_name = mgr.projects.each_with_object({}) { |p, h| h[p.name] = p }
+  upstream_gems = upstream_dep_names
+    .reject { |name| syncable_names.include?(name) }
+    .map { |name| by_name[name] }
+    .compact
+
+  if upstream_gems.any?
+    puts "\n#{colorize("Preparing upstream gem(s):", :bold)}"
+    upstream_gems.each do |gem|
+      dir = gem.path.to_s
+      puts "#{colorize("▸", :cyan)} #{colorize(gem.name, :bold)}"
+
+      begin
+        status = mgr.git_status(gem)
+      rescue => e
+        print_error "  Could not read git status: #{e.message}"
+        print_error "Aborting sync — upstream gems must be accessible."
+        return
+      end
+
+      unless status[:on_main]
+        print_info "  Currently on '#{status[:branch]}' — switching to main..."
+        unless status[:clean]
+          print_error "  #{gem.name} has uncommitted changes on '#{status[:branch]}'. Please commit or stash first."
+          print_error "Aborting sync — upstream gems must be on main with a clean tree."
+          return
+        end
+        checkout_ok = system("git", "-C", dir, "checkout", "main", "--quiet", err: File::NULL)
+        unless checkout_ok
+          print_error "  git checkout main failed for #{gem.name}"
+          print_error "Aborting sync — upstream gems must be on main."
+          return
+        end
+      end
+
+      print_info "  Pulling latest..."
+      pull_ok = system("git", "-C", dir, "pull", "--ff-only", "--quiet", out: File::NULL, err: File::NULL)
+      unless pull_ok
+        print_error "  git pull --ff-only failed for #{gem.name} (diverged from remote?)"
+        print_error "Aborting sync — upstream gems must be up to date with origin/main."
+        return
+      end
+
+      print_success "  #{gem.name} is on main and up to date"
+    end
+    puts ""
+  end
+
+  # --- Sync downstream projects -------------------------------------------
+
+  puts "#{colorize("Will process #{syncable.size} project(s) in dependency order:", :bold)}"
   syncable.each_with_index { |p, i| puts "  #{i + 1}. #{p.name}" }
   puts ""
 
