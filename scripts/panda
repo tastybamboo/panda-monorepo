@@ -177,7 +177,10 @@ class DependencyManager
       end
     end
 
-    queue = @projects.select { |p| in_degree[p.name] == 0 }.map(&:name).sort
+    # Sort helper: gems before sites, then alphabetically within each type
+    sort_queue = ->(q) { q.sort_by { |n| [(by_name[n].type == :site ? 1 : 0), n] } }
+
+    queue = sort_queue.call(@projects.select { |p| in_degree[p.name] == 0 }.map(&:name))
     sorted = []
 
     until queue.empty?
@@ -187,7 +190,7 @@ class DependencyManager
         in_degree[dependent] -= 1
         queue << dependent if in_degree[dependent] == 0
       end
-      queue.sort!
+      queue = sort_queue.call(queue)
     end
 
     if sorted.size != @projects.size
@@ -398,6 +401,7 @@ def command_deps_sync
   updated = []
   skipped = []
   errors = []
+  by_name = mgr.projects.each_with_object({}) { |p, h| h[p.name] = p }
 
   syncable.each do |proj|
     puts colorize("─" * 60, :blue)
@@ -442,11 +446,18 @@ def command_deps_sync
       end
     end
 
+    # Check if the project's feature branch is fully pushed (clean + synced with remote)
+    proj_fully_pushed = !stashed && original_branch && status[:clean] && status[:up_to_date]
+
     # Helper to restore original branch and stash on error or completion
     restore = -> {
       if original_branch
-        print_info "  Switching back to '#{original_branch}'..."
-        system("git", "-C", dir, "checkout", original_branch, "--quiet", err: File::NULL)
+        if proj_fully_pushed
+          print_success "  Leaving on main (#{original_branch} was fully pushed)"
+        else
+          print_info "  Switching back to '#{original_branch}'..."
+          system("git", "-C", dir, "checkout", original_branch, "--quiet", err: File::NULL)
+        end
       end
       if stashed
         print_info "  Restoring stashed changes..."
@@ -472,18 +483,90 @@ def command_deps_sync
       next
     end
 
-    # Bundle update only the panda github deps
+    # Ensure dependency repos are on main so Bundler local overrides work.
+    # When a dep like panda-editor is checked out on a feature branch but the
+    # Gemfile specifies branch: main, `bundle update` will refuse to run.
     github_dep_names = proj.panda_deps.select { |_, v| v == :github }.keys
+    switched_deps = [] # Array of { name:, path:, original_branch:, stashed: }
+
+    github_dep_names.each do |dep_name|
+      dep_proj = by_name[dep_name]
+      next unless dep_proj
+
+      dep_dir = dep_proj.path.to_s
+      dep_branch = `git -C #{dep_dir} rev-parse --abbrev-ref HEAD`.strip
+      next if dep_branch == "main"
+
+      dep_clean = `git -C #{dep_dir} status --porcelain`.strip.empty?
+      dep_stashed = false
+
+      # Check if the feature branch is fully pushed (clean + up to date with remote)
+      dep_fully_pushed = false
+      if dep_clean
+        local_sha = `git -C #{dep_dir} rev-parse #{dep_branch}`.strip
+        system("git", "-C", dep_dir, "fetch", "--quiet", out: File::NULL, err: File::NULL)
+        remote_sha = `git -C #{dep_dir} rev-parse origin/#{dep_branch} 2>/dev/null`.strip
+        dep_fully_pushed = !remote_sha.empty? && local_sha == remote_sha
+      end
+
+      if dep_fully_pushed
+        print_info "  Dep #{dep_name}: switching from '#{dep_branch}' to main (branch fully pushed)..."
+      else
+        print_info "  Dep #{dep_name}: switching from '#{dep_branch}' to main..."
+      end
+
+      unless dep_clean
+        print_info "  Dep #{dep_name}: stashing uncommitted changes..."
+        unless system("git", "-C", dep_dir, "stash", "--quiet")
+          print_error "  Dep #{dep_name}: git stash failed — skipping branch switch"
+          next
+        end
+        dep_stashed = true
+      end
+
+      unless system("git", "-C", dep_dir, "checkout", "main", "--quiet", err: File::NULL)
+        print_error "  Dep #{dep_name}: git checkout main failed"
+        system("git", "-C", dep_dir, "stash", "pop", "--quiet") if dep_stashed
+        next
+      end
+
+      # Pull latest on the dep so bundle update picks up the newest commit
+      system("git", "-C", dep_dir, "pull", "--ff-only", "--quiet", out: File::NULL, err: File::NULL)
+
+      switched_deps << { name: dep_name, path: dep_dir, original_branch: dep_branch, stashed: dep_stashed, fully_pushed: dep_fully_pushed }
+    end
+
+    # Helper to restore switched dependency repos
+    restore_deps = -> {
+      switched_deps.each do |dep|
+        if dep[:fully_pushed]
+          print_success "  Dep #{dep[:name]}: leaving on main (#{dep[:original_branch]} was fully pushed)"
+        else
+          print_info "  Dep #{dep[:name]}: switching back to '#{dep[:original_branch]}'..."
+          system("git", "-C", dep[:path], "checkout", dep[:original_branch], "--quiet", err: File::NULL)
+          if dep[:stashed]
+            print_info "  Dep #{dep[:name]}: restoring stashed changes..."
+            system("git", "-C", dep[:path], "stash", "pop", "--quiet", err: File::NULL)
+          end
+        end
+      end
+    }
+
+    # Bundle update only the panda github deps
     print_info "  Updating: #{github_dep_names.join(", ")}"
 
     bundle_cmd = ["bundle", "update", *github_dep_names]
     bundle_ok = system(*bundle_cmd, chdir: dir, out: File::NULL, err: File::NULL)
     unless bundle_ok
       print_error "  bundle update failed"
+      restore_deps.call
       restore.call
       errors << proj.name
       next
     end
+
+    # Restore dependency repos now that bundle update is done
+    restore_deps.call
 
     # Check if Gemfile.lock changed
     lock_diff = `git -C #{dir} diff --name-only Gemfile.lock`.strip
