@@ -20,7 +20,7 @@ Panda::Core::ModuleRegistry.register(
     components: "app/components/panda/core/**/*.rb",
     helpers: "app/helpers/panda/core/**/*.rb",
     views: "app/views/panda/core/**/*.erb",
-    javascripts: "app/assets/javascript/panda/core/**/*.js"
+    javascripts: "app/javascript/panda/core/**/*.js"
   }
 )
 ```

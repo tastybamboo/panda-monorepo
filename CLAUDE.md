@@ -38,10 +38,10 @@ and commits/pushes the updated Gemfile.lock. This keeps all gems pointing at the
 
 ### Panda CSS Compilation
 
-Always compile CSS from a host app (e.g. neurobetter), not from panda-core directly. The ModuleRegistry pattern means each gem registers its view paths; compiling from panda-core alone misses classes from panda-cms, cms-pro, etc. Output goes to `panda-core/public/panda-core-assets/panda-core.css`.
+Compile CSS **from a host app when possible** (e.g. neurobetter) because the ModuleRegistry pattern means each gem registers its view paths; a host app loads all modules so Tailwind sees every class. When no host app is available, compiling **from the monorepo root via the dummy app is acceptable** — it covers all gems in the monorepo but may miss host-app-specific templates. Output always goes to `panda-core/public/panda-core-assets/panda-core.css`.
 
-- **From a host app** (preferred): `bundle exec rake panda:compile_css`
-- **From the monorepo root**: `bin/panda css compile` (uses panda-core's dummy app)
+- **From a host app** (preferred, most complete): `bundle exec rake panda:compile_css`
+- **From the monorepo root** (acceptable fallback): `bin/panda css compile` (uses panda-core's dummy app)
 - After compiling, commit/push CSS changes in panda-core, then run `bin/panda deps sync`
 
 **Full details:** [docs/css-compilation.md](docs/css-compilation.md)
