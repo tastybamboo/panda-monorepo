@@ -17,6 +17,7 @@
 - When we update version.rb in any project, we need to also run a bundle update
 - Always run `bundle update --all` before committing changes
 - Always run "yamllint -c .yamllint ." if you make changes to .yml or .yaml files.
+- Remove `spring` from all Gemfiles of Rails 7+ projects in this monorepo
 
 ## Panda CLI Tool
 
@@ -37,17 +38,19 @@ and commits/pushes the updated Gemfile.lock. This keeps all gems pointing at the
 
 ### Panda CSS Compilation
 
-When Tailwind classes change in any panda gem template, CSS must be recompiled:
+Compile CSS **from a host app when possible** (e.g. neurobetter) because the ModuleRegistry pattern means each gem registers its view paths; a host app loads all modules so Tailwind sees every class. When no host app is available, compiling **from the monorepo root via the dummy app is acceptable** — it covers all gems in the monorepo but may miss host-app-specific templates. Output always goes to `panda-core/public/panda-core-assets/panda-core.css`.
 
-1. **From a host app** (preferred): `bundle exec rake panda:compile_css`
-   - Run from neurobetter or another host app that loads all panda modules
-   - This ensures Tailwind sees every template across all gems
-2. **From the monorepo root**: `panda css compile`
-   - Uses panda-core's dummy app instead of a host app
-   - May not see classes from host-app-specific templates
-3. Output goes to `panda-core/public/panda-core-assets/panda-core.css`
-4. Commit and push the CSS changes in `panda-core`
-5. Run `bin/panda deps sync` or `bundle update panda-core` in downstream gems to pick up the new commit
+- **From a host app** (preferred, most complete): `bundle exec rake panda:compile_css`
+- **From the monorepo root** (acceptable fallback): `bin/panda css compile` (uses panda-core's dummy app)
+- After compiling, commit/push CSS changes in panda-core, then run `bin/panda deps sync`
+
+**Full details:** [docs/css-compilation.md](docs/css-compilation.md)
+
+### JavaScript Architecture
+
+All panda gems use importmap-based ES modules served via Rack middleware — no compilation or bundling. Files live in `app/javascript/panda/[gem]/` and are served directly.
+
+**Full details:** [docs/javascript-architecture.md](docs/javascript-architecture.md)
 
 ## PR Readiness Checker Agent
 
@@ -126,11 +129,22 @@ All admin pages across panda gems and host apps (neurobetter, etc.) **must** use
 - **Gold standard**: `gems/panda-core/app/views/panda/core/admin/users/index.html.erb`
 - **Host app example**: `sites/neurobetter/app/views/admin/members/onboarding/index.html.erb`
 - **Components source**: `gems/panda-core/app/components/panda/core/admin/`
-- 1. Always commit the PostgreSQL schema.rb (since PostgreSQL is your primary database):
-  git restore spec/dummy/db/schema.rb
-  2. Use db:schema:load in CI ✅ Already done!
-    - CI uses db:schema:load which loads the schema regardless of which database generated it
-    - This is why the fix I made earlier works
-  3. Document for contributors:
-    - Use PostgreSQL for local development when running migrations
-    - SQLite is fine for testing, but don't commit the schema.rb changes it generates
+
+## CI Troubleshooting
+
+- "Ferrum::ProcessTimeoutError: Browser did not produce websocket url within 10 seconds" — these are normally JavaScript failures or asset issues in GitHub CI, not Ferrum configuration problems.
+
+## API Security Checklist
+
+When writing or reviewing API controllers, verify every item:
+
+- **Authorization on all actions**: Every endpoint needs a permission check (including read-only index/show). Don't assume authentication alone is sufficient.
+- **IDOR prevention**: When accepting resource IDs from the client (e.g. blob IDs, user IDs), verify ownership or require an elevated permission before using them.
+- **Double-render guards**: If a helper method (e.g. `attach_og_image`) can call `render_forbidden`, add `return if performed?` after calling it in the action to prevent `AbstractController::DoubleRenderError`.
+- **Strong parameters for nested hashes**: When accepting arbitrary key-value hashes (e.g. `assets: { "field" => "blob_id" }`), use `assets: {}` in `permit()`.
+- **Use permitted params, not raw params**: After calling `permit()`, reference the permitted result (`payload[:assets]`) rather than `params[:collection_item][:assets]` to avoid bypassing parameter filtering.
+- **Base64 size validation**: Ruby's `Base64.encode64` inserts newlines every 60 chars. Strip whitespace before measuring size: `data.gsub(/\s+/, "")`.
+- **Metadata preservation on dedup**: When deduplicating records by checksum, use `||=` for metadata fields to avoid overwriting the original uploader's info.
+- **Auth scheme consistency**: Match the auth scheme the server expects (`Token` for `authenticate_or_request_with_http_token`, `Bearer` for OAuth).
+- **N+1 queries**: Use batch queries (`.group().count`) or eager-loading instead of calling `.count` inside loops. For in-memory filtering, memoize with `@var ||=` or extract to a method.
+- **Direct blob attachment**: Prefer `item.assets.attach(blob)` over downloading and re-uploading (`io: StringIO.new(blob.download)`) to avoid double storage.
