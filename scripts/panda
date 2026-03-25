@@ -711,6 +711,121 @@ def command_css_compile
   end
 end
 
+def command_deps_js_check
+  print_header "Checking vendored JavaScript dependencies"
+
+  # Patterns to find vendored JS files with version comments
+  # Format: "// package-name@version vendored from npm"
+  # Also handles: "// package@version downloaded from ..."
+  version_pattern = /^\/\/\s+(.+?)@(\d+\.\d+\.\d+)\s+(?:vendored|downloaded)\s+from/
+
+  # Also check importmap.rb comments like: # @1.2.3
+  importmap_pattern = /pin\s+"([^"]+)".*#\s+@(\d+\.\d+\.\d+)/
+
+  packages = {}
+
+  # Scan vendored JS files across all gems
+  gem_dirs = Dir.glob(MONOREPO_ROOT.join("gems/panda-*"))
+  gem_dirs.each do |gem_dir|
+    gem_name = File.basename(gem_dir)
+
+    # Check vendored JS files
+    js_files = Dir.glob(File.join(gem_dir, "**/*.{js,mjs}")).select { |f|
+      f.include?("/vendor/") && !f.include?("/node_modules/") && !f.include?("/vendor/bundle/")
+    }
+
+    js_files.each do |file|
+      first_line = File.open(file) { |f| f.readline rescue "" }
+      if first_line =~ version_pattern
+        pkg_name = $1
+        current_version = $2
+        packages[pkg_name] ||= { current: current_version, gem: gem_name, source: File.basename(file) }
+      end
+    end
+
+    # Check importmap.rb for version comments
+    importmap_file = File.join(gem_dir, "config/importmap.rb")
+    if File.exist?(importmap_file)
+      File.readlines(importmap_file).each do |line|
+        if line =~ importmap_pattern
+          pkg_name = $1
+          current_version = $2
+          packages[pkg_name] ||= { current: current_version, gem: gem_name, source: "importmap.rb" }
+        end
+      end
+    end
+  end
+
+  if packages.empty?
+    print_warning "No vendored JavaScript packages found"
+    return
+  end
+
+  puts "Found #{colorize(packages.size.to_s, :bold)} vendored packages\n\n"
+
+  # Check latest versions from npm
+  outdated = []
+  up_to_date = 0
+
+  packages.sort_by { |name, _| name }.each do |pkg_name, info|
+    # Strip subpaths for npm lookup (e.g. @rails/actioncable/src → @rails/actioncable)
+    npm_name = if pkg_name.start_with?("@")
+      parts = pkg_name.split("/")
+      parts[0..1].join("/")
+    else
+      pkg_name.split("/").first
+    end
+    print "  Checking #{colorize(pkg_name, :cyan)}..."
+    stdout, status = Open3.capture2("npm", "view", npm_name, "version", err: File::NULL)
+    latest = stdout.strip
+
+    if !status.success? || latest.empty?
+      puts " #{colorize("unknown", :yellow)} (npm lookup failed)"
+      next
+    end
+
+    if latest == info[:current]
+      puts " #{colorize(info[:current], :green)} (current)"
+      up_to_date += 1
+    else
+      puts " #{colorize(info[:current], :yellow)} → #{colorize(latest, :green)} available"
+      outdated << { name: pkg_name, current: info[:current], latest: latest, gem: info[:gem], source: info[:source] }
+    end
+  end
+
+  puts ""
+
+  if outdated.empty?
+    print_success "All #{up_to_date} vendored packages are up to date!"
+  else
+    puts colorize("#{outdated.size} package(s) have updates available:", :yellow)
+    puts ""
+
+    # Table header
+    fmt = "  %-40s %-12s %-12s %-20s"
+    puts colorize(format(fmt, "Package", "Current", "Latest", "Gem"), :dim)
+    puts colorize("  " + "-" * 84, :dim)
+
+    outdated.each do |pkg|
+      current_str = pkg[:current]
+      latest_str = pkg[:latest]
+
+      # Highlight major version changes
+      current_major = current_str.split(".").first
+      latest_major = latest_str.split(".").first
+      if current_major != latest_major
+        latest_str = colorize(latest_str, :red) + " " + colorize("(major!)", :red)
+      else
+        latest_str = colorize(latest_str, :green)
+      end
+
+      puts format(fmt, pkg[:name], colorize(current_str, :yellow), latest_str, pkg[:gem])
+    end
+
+    puts "\n  To update, run: npm pack <package>@<version> and replace the vendored file"
+  end
+end
+
 def show_help
   puts <<~HELP
     #{colorize("Panda Monorepo CLI", :bold)}
@@ -724,6 +839,7 @@ def show_help
       #{colorize("deps graph", :green)}      Show dependency graph in topological order
       #{colorize("deps check", :green)}      Check if gem lock files are in sync with upstream
       #{colorize("deps sync", :green)}       Update and push Gemfile.lock for all downstream gems
+      #{colorize("deps js-check", :green)}  Check vendored JS packages for available updates
       #{colorize("--help, -h", :green)}      Show this help message
 
     #{colorize("Examples:", :cyan)}
@@ -784,6 +900,8 @@ when "deps"
     command_deps_check
   when "sync"
     command_deps_sync
+  when "js-check"
+    command_deps_js_check
   else
     print_error "Unknown deps subcommand: #{subcommand}"
     puts "Run 'panda --help' for usage information"

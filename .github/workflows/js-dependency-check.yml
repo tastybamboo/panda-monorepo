@@ -1,0 +1,86 @@
+name: JS Dependency Check
+
+on:
+  schedule:
+    # Every Monday at 09:00 UTC
+    - cron: "0 9 * * 1"
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  check-js-deps:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.4"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Check vendored JS dependencies
+        id: check
+        run: |
+          # Run the check and capture output (strip ANSI codes for the issue body)
+          OUTPUT=$(ruby scripts/panda deps js-check 2>&1 | sed 's/\x1B\[[0-9;]*m//g')
+          echo "$OUTPUT"
+
+          # Check if any packages are outdated
+          if echo "$OUTPUT" | grep -q "updates available"; then
+            echo "outdated=true" >> "$GITHUB_OUTPUT"
+            # Save output for the issue body
+            {
+              echo "body<<EOF"
+              echo "$OUTPUT"
+              echo "EOF"
+            } >> "$GITHUB_OUTPUT"
+          else
+            echo "outdated=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create or update issue
+        if: steps.check.outputs.outdated == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = '🔄 Vendored JS dependencies have updates available';
+            const label = 'dependencies';
+
+            // Check for existing open issue
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: label,
+              creator: 'github-actions[bot]'
+            });
+
+            const existing = issues.find(i => i.title === title);
+            const body = `## Vendored JavaScript Dependency Check\n\n\`\`\`\n${process.env.CHECK_OUTPUT}\n\`\`\`\n\n### How to update\n\n1. \`npm pack <package>@<version>\` to download\n2. Extract and copy the dist file to the gem's vendor directory\n3. Update the version comment on line 1 of the vendored file\n4. Update any importmap.rb version comments\n5. Run tests to verify\n\n_Last checked: ${new Date().toISOString().split('T')[0]}_`;
+
+            if (existing) {
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existing.number,
+                body: body
+              });
+              console.log(`Updated existing issue #${existing.number}`);
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: title,
+                body: body,
+                labels: [label],
+                assignees: ['jfi']
+              });
+              console.log('Created new issue');
+            }
+          env:
+            CHECK_OUTPUT: ${{ steps.check.outputs.body }}
