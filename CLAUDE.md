@@ -1,4 +1,38 @@
-# Claude Code Instructions
+# Panda — Monorepo Root
+
+The workspace for the **panda** ecosystem: an open-source Rails CMS framework
+by **tastybamboo**, with a commercial **panda-pro** extension for premium features.
+
+## Folder Structure
+
+| Folder | What | Committed? |
+|--------|------|------------|
+| `panda-*/` | Gem source code at root level (separate GitHub repos) | No (gitignored, cloned by `bin/setup`) |
+| `websites/` | Marketing sites (pandacms.io, tastybamboo.net) | Yes |
+| `brand/` | Brand identity and visual standards | Yes |
+| `marketing/` | Positioning, pricing, outreach, competitive intel | Yes |
+| `github-profiles/` | GitHub organisation profile content | Yes |
+| `automation/` | CI tooling and Docker images | No (gitignored) |
+| `generator/` | Rails app generator for new panda sites | No (gitignored) |
+| `docs/` | Architecture and workflow documentation | Yes |
+| `bin/` | CLI tools and setup scripts | Yes |
+| `scripts/` | CLI implementation | Yes |
+
+Each sub-folder with its own `CLAUDE.md` contains area-specific conventions.
+**Always read the relevant sub-folder's CLAUDE.md before working in that area.**
+
+## Owner
+
+James Inman (james@otaina.co.uk). UK-based.
+Director of Otaina Ltd, which operates tastybamboo.
+
+## Key Principles
+
+- **panda** and **tastybamboo** are always lowercase
+- UK English always (colour, organisation, licence, etc.)
+- Open-source core (BSD-3-Clause): panda-core, panda-cms, panda-editor
+- Commercial extensions via panda-pro (bundled tiers)
+- Gems should never have knowledge about host apps
 
 ## Initial Setup
 
@@ -13,7 +47,7 @@
 - Never push to GitHub with Gemfiles which reference a local path
   - **Automated Protection**: A git pre-push hook automatically prevents pushing panda gems with path references
   - Run `bin/setup-hooks` to install the hook if not already set up (or use `bin/setup` for complete setup)
-  - The hook checks: core, cms, editor, cms-pro, and ci-tooling directories
+  - The hook checks: core, cms, editor, pro, and ci-tooling directories
 - When we update version.rb in any project, we need to also run a bundle update
 - Always run `bundle update --all` before committing changes
 - Always run "yamllint -c .yamllint ." if you make changes to .yml or .yaml files.
@@ -42,6 +76,7 @@ Compile CSS **from a host app when possible** (e.g. neurobetter) because the Mod
 
 - **From a host app** (preferred, most complete): `bundle exec rake panda:compile_css`
 - **From the monorepo root** (acceptable fallback): `bin/panda css compile` (uses panda-core's dummy app)
+- Output goes to `panda-core/public/panda-core-assets/panda-core.css` (at monorepo root)
 - After compiling, commit/push CSS changes in panda-core, then run `bin/panda deps sync`
 
 **Full details:** [docs/css-compilation.md](docs/css-compilation.md)
@@ -126,10 +161,11 @@ All admin pages across panda gems and host apps (neurobetter, etc.) **must** use
 
 ### Reference Implementations
 
-- **Gold standard**: `gems/panda-core/app/views/panda/core/admin/users/index.html.erb`
-- **Host app example**: `sites/neurobetter/app/views/admin/members/onboarding/index.html.erb`
-- **Components source**: `gems/panda-core/app/components/panda/core/admin/`
+- **Gold standard**: `panda-core/app/views/panda/core/admin/users/index.html.erb`
+- **Host app example**: neurobetter `app/views/admin/` (see the neurobetter monorepo)
+- **Components source**: `panda-core/app/components/panda/core/admin/`
 
+<<<<<<< HEAD
 ## CI Troubleshooting
 
 - "Ferrum::ProcessTimeoutError: Browser did not produce websocket url within 10 seconds" — these are normally JavaScript failures or asset issues in GitHub CI, not Ferrum configuration problems.
@@ -148,3 +184,10 @@ When writing or reviewing API controllers, verify every item:
 - **Auth scheme consistency**: Match the auth scheme the server expects (`Token` for `authenticate_or_request_with_http_token`, `Bearer` for OAuth).
 - **N+1 queries**: Use batch queries (`.group().count`) or eager-loading instead of calling `.count` inside loops. For in-memory filtering, memoize with `@var ||=` or extract to a method.
 - **Direct blob attachment**: Prefer `item.assets.attach(blob)` over downloading and re-uploading (`io: StringIO.new(blob.download)`) to avoid double storage.
+
+## Database Schema
+
+- Always commit the PostgreSQL `schema.rb` (PostgreSQL is the primary database)
+- Use `db:schema:load` in CI (not `db:migrate`)
+- Use PostgreSQL for local development when running migrations
+- SQLite is fine for testing, but don't commit the schema.rb changes it generates

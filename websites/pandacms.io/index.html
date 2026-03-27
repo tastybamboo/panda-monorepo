@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panda CMS - The Lightweight Ruby-on-Rails CMS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Modak&display=swap" rel="stylesheet">
+    <!-- TODO: Replace Inter with Colfax from Adobe Fonts when embed code is available
+         Add: <link rel="stylesheet" href="https://use.typekit.net/YOUR_PROJECT_ID.css">
+         Then update body font-family to 'colfax', sans-serif -->
+    <style>
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Offset for fixed nav when scrolling to anchors */
+        section[id] {
+            scroll-margin-top: 100px;
+        }
+
+        .font-modak {
+            font-family: 'Modak', cursive;
+        }
+
+        .bg-panda {
+            background-color: #262c30;
+        }
+
+        .text-gradient-title {
+            background: linear-gradient(174deg, #ea6aff 33%, #fa60bd 56%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .text-gradient-tagline {
+            background: linear-gradient(177deg, #c1f4ff 35%, #749299 111%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .text-sky-100 {
+            color: #e0f2fe;
+        }
+
+        .text-pink-link {
+            color: #f763cc;
+        }
+
+        .text-cyan-badge {
+            color: #ace9f6;
+        }
+
+        .bg-badge {
+            background-color: #2e204d;
+        }
+
+        .icon-border {
+            background-color: #f4ebff;
+            border: 4px solid #f9f5ff;
+        }
+
+        .nav-scrolled {
+            background-color: rgba(46, 32, 77, 0.6);
+            backdrop-filter: blur(32px);
+            -webkit-backdrop-filter: blur(32px);
+        }
+
+        .code-block {
+            background-color: #1a1f24;
+            border: 1px solid #3a4149;
+        }
+
+    </style>
+</head>
+<body id="top" class="overflow-x-hidden bg-panda">
+    <!-- Navigation -->
+    <nav class="fixed top-0 left-0 right-0 z-50 bg-badge/90 backdrop-blur-sm transition-colors duration-300">
+        <div class="max-w-4xl mx-auto px-4 md:px-8 py-5 flex justify-center">
+            <div class="flex items-center gap-1 overflow-x-auto">
+                <a href="#top" class="mr-2 flex-shrink-0 hover:opacity-80 transition-opacity">
+                    <img src="assets/panda-logo.svg" alt="Panda" class="w-8 h-8">
+                </a>
+                <a href="#features" class="text-cyan-badge text-base font-medium px-4 py-1.5 rounded-full hover:bg-white/10 transition-colors whitespace-nowrap">Features</a>
+                <a href="#editor" class="text-cyan-badge text-base font-medium px-4 py-1.5 rounded-full hover:bg-white/10 transition-colors whitespace-nowrap">Editor</a>
+                <a href="pro.html" class="text-cyan-badge text-base font-medium px-4 py-1.5 rounded-full hover:bg-white/10 transition-colors whitespace-nowrap">Pro</a>
+                <a href="gems.html" class="text-cyan-badge text-base font-medium px-4 py-1.5 rounded-full hover:bg-white/10 transition-colors whitespace-nowrap">Gems</a>
+                <a href="https://demo.pandacms.io" class="text-cyan-badge text-base font-medium px-4 py-1.5 rounded-full hover:bg-white/10 transition-colors whitespace-nowrap">Demo</a>
+                <a href="https://github.com/tastybamboo/panda-cms" class="text-cyan-badge text-base font-medium px-4 py-1.5 rounded-full hover:bg-white/10 transition-colors whitespace-nowrap inline-flex items-center gap-1.5">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                    </svg>
+                    GitHub
+                </a>
+                <a href="mailto:bamboo@pandacms.io" class="text-cyan-badge text-base font-medium px-4 py-1.5 rounded-full hover:bg-white/10 transition-colors whitespace-nowrap">Contact</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="relative flex flex-col items-center px-4 md:px-8 pt-24 md:pt-28 pb-16 overflow-hidden">
+        <!-- Gradient Ellipse Background (fixed position) -->
+        <div class="fixed inset-0 flex items-start justify-center pointer-events-none z-[1]" style="top: -200px;">
+            <img src="assets/gradient-ellipse.png" alt="" class="w-full max-w-6xl opacity-60">
+        </div>
+
+        <!-- Badge -->
+        <div class="relative z-10 mb-4 flex items-center gap-1 bg-badge px-5 py-3 rounded-full">
+            <span class="text-cyan-badge text-sm md:text-base font-bold">Public Beta</span>
+            <span class="text-cyan-badge text-sm md:text-base mx-2">|</span>
+            <a href="https://github.com/tastybamboo/panda-cms" class="text-cyan-badge text-sm md:text-base font-bold underline hover:opacity-80">Star on GitHub</a>
+        </div>
+
+        <!-- Panda Logo -->
+        <div class="relative z-10 -mb-4">
+            <img src="assets/panda-logo.svg" alt="Panda Logo" class="w-44 h-44 md:w-52 md:h-52 lg:w-60 lg:h-60">
+        </div>
+
+        <!-- Main Title -->
+        <h1 class="relative z-10 text-5xl md:text-6xl lg:text-8xl text-center mb-2 font-modak text-gradient-title">
+            Panda CMS
+        </h1>
+
+        <!-- Tagline -->
+        <p class="relative z-10 text-sm md:text-base lg:text-xl text-center max-w-lg mx-auto leading-snug text-gradient-tagline mb-8">
+            Better websites, on Rails
+        </p>
+
+        <!-- Description -->
+        <p class="relative z-10 text-sm md:text-base text-center max-w-2xl mx-auto leading-relaxed text-white/80 mb-8">
+            A modern, modular content management system built for Ruby on Rails. Simple enough for small sites, powerful enough to scale. No bloat, just the features you need.
+        </p>
+
+        <!-- Install Command -->
+        <div class="relative z-10 code-block rounded-lg px-6 py-4 mb-6">
+            <code class="text-pink-link text-sm md:text-base font-mono">bundle add panda-cms</code>
+        </div>
+
+        <!-- CTA Buttons -->
+        <div class="relative z-10 flex flex-wrap gap-4 justify-center">
+            <a href="https://github.com/tastybamboo/panda-cms#installation" class="bg-pink-link hover:bg-pink-500 text-white font-medium px-6 py-3 rounded-full transition-colors">
+                Get Started
+            </a>
+            <a href="https://demo.pandacms.io" class="border border-white/30 hover:bg-white/10 text-white font-medium px-6 py-3 rounded-full transition-colors">
+                View Demo
+            </a>
+            <a href="https://demo.pandacms.io/admin" class="border border-white/30 hover:bg-white/10 text-white font-medium px-6 py-3 rounded-full transition-colors">
+                Try Admin Panel
+            </a>
+        </div>
+    </section>
+
+    <!-- Quick Start Section -->
+    <section id="quickstart" class="relative z-[2] py-12 md:py-16 px-4 md:px-8">
+        <div class="max-w-4xl mx-auto">
+            <div class="text-center space-y-4 md:space-y-6 mb-12">
+                <h2 class="text-xl md:text-2xl font-medium text-sky-100 leading-tight tracking-tight">
+                    Up and running in minutes
+                </h2>
+                <p class="text-sm md:text-base text-white/80 max-w-2xl mx-auto leading-relaxed">
+                    Three commands to a working CMS. No complex configuration required.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+                <!-- Step 1 -->
+                <div class="relative">
+                    <div class="absolute -top-3 -left-3 w-8 h-8 bg-pink-link rounded-full flex items-center justify-center text-white font-bold text-sm">1</div>
+                    <div class="code-block rounded-lg p-5 h-full">
+                        <p class="text-cyan-badge text-xs uppercase tracking-wider mb-2">Install</p>
+                        <code class="text-pink-link text-sm font-mono">bundle add panda-cms</code>
+                        <p class="text-white/60 text-xs mt-3">Add the gem to your Rails app</p>
+                    </div>
+                </div>
+
+                <!-- Step 2 -->
+                <div class="relative">
+                    <div class="absolute -top-3 -left-3 w-8 h-8 bg-pink-link rounded-full flex items-center justify-center text-white font-bold text-sm">2</div>
+                    <div class="code-block rounded-lg p-5 h-full">
+                        <p class="text-cyan-badge text-xs uppercase tracking-wider mb-2">Setup</p>
+                        <code class="text-pink-link text-sm font-mono block">rails g panda:cms:install</code>
+                        <code class="text-pink-link text-sm font-mono block mt-1">rails db:migrate</code>
+                        <p class="text-white/60 text-xs mt-3">Run the generator and migrations</p>
+                    </div>
+                </div>
+
+                <!-- Step 3 -->
+                <div class="relative">
+                    <div class="absolute -top-3 -left-3 w-8 h-8 bg-pink-link rounded-full flex items-center justify-center text-white font-bold text-sm">3</div>
+                    <div class="code-block rounded-lg p-5 h-full">
+                        <p class="text-cyan-badge text-xs uppercase tracking-wider mb-2">Launch</p>
+                        <code class="text-pink-link text-sm font-mono">rails server</code>
+                        <p class="text-white/60 text-xs mt-3">Visit /admin to start editing</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center mt-8">
+                <a href="https://github.com/tastybamboo/panda-cms#installation" class="text-pink-link hover:opacity-80 text-sm font-medium inline-flex items-center gap-2">
+                    View full installation guide
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                        <polyline points="12 5 19 12 12 19"></polyline>
+                    </svg>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Core Features Section -->
+    <section id="features" class="relative z-[2] py-12 md:py-16 px-4 md:px-8">
+        <div class="max-w-6xl mx-auto space-y-12 md:space-y-16">
+            <!-- Section Header -->
+            <div class="text-center space-y-4 md:space-y-6">
+                <h2 class="text-xl md:text-2xl font-medium text-sky-100 leading-tight tracking-tight">
+                    Everything you need to manage content
+                </h2>
+                <p class="text-sm md:text-base text-white max-w-3xl mx-auto leading-relaxed">
+                    A complete content management toolkit that integrates seamlessly with your Rails application. Built by developers, for developers.
+                </p>
+            </div>
+
+            <!-- Feature Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10">
+                <!-- Pages -->
+                <div class="flex flex-col items-center text-center space-y-4">
+                    <div class="w-12 h-12 icon-border rounded-full flex items-center justify-center">
+                        <svg class="w-6 h-6 text-[#4a497f]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                        </svg>
+                    </div>
+                    <h3 class="text-sm md:text-base font-medium text-white">Hierarchical Pages</h3>
+                    <p class="text-sm text-white/80">Unlimited nesting depth with automatic slug management, redirects when paths change, and multiple status states.</p>
+                </div>
+
+                <!-- Posts/Blog -->
+                <div class="flex flex-col items-center text-center space-y-4">
+                    <div class="w-12 h-12 icon-border rounded-full flex items-center justify-center">
+                        <svg class="w-6 h-6 text-[#4a497f]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 19l7-7 3 3-7 7-3-3z"></path>
+                            <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path>
+                            <path d="M2 2l7.586 7.586"></path>
+                            <circle cx="11" cy="11" r="2"></circle>
+                        </svg>
+                    </div>
+                    <h3 class="text-sm md:text-base font-medium text-white">Blog & Posts</h3>
+                    <p class="text-sm text-white/80">Date-based URLs, author tracking, excerpts, and full SEO support. Perfect for news, blogs, and announcements.</p>
+                </div>
+
+                <!-- Templates -->
+                <div class="flex flex-col items-center text-center space-y-4">
+                    <div class="w-12 h-12 icon-border rounded-full flex items-center justify-center">
+                        <svg class="w-6 h-6 text-[#4a497f]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="3" y1="9" x2="21" y2="9"></line>
+                            <line x1="9" y1="21" x2="9" y2="9"></line>
+                        </svg>
+                    </div>
+                    <h3 class="text-sm md:text-base font-medium text-white">Page Templates</h3>
+                    <p class="text-sm text-white/80">Define reusable layouts with block-based content composition. Create consistent page structures across your site.</p>
+                </div>
+
+                <!-- Menus -->
+                <div class="flex flex-col items-center text-center space-y-4">
+                    <div class="w-12 h-12 icon-border rounded-full flex items-center justify-center">
+                        <svg class="w-6 h-6 text-[#4a497f]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="3" y1="12" x2="21" y2="12"></line>
+                            <line x1="3" y1="6" x2="21" y2="6"></line>
+                            <line x1="3" y1="18" x2="21" y2="18"></line>
+                        </svg>
+                    </div>
+                    <h3 class="text-sm md:text-base font-medium text-white">Flexible Menus</h3>
+                    <p class="text-sm text-white/80">Auto-generated from page hierarchies or manually managed. Menus update automatically when pages change.</p>
+                </div>
+
+                <!-- Forms -->
+                <div class="flex flex-col items-center text-center space-y-4">
+                    <div class="w-12 h-12 icon-border rounded-full flex items-center justify-center">
+                        <svg class="w-6 h-6 text-[#4a497f]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                            <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+                            <path d="M9 14l2 2 4-4"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-sm md:text-base font-medium text-white">Form Builder</h3>
+                    <p class="text-sm text-white/80">Built-in spam protection with timing detection, honeypots, and rate limiting. WCAG-compliant, no CAPTCHAs needed.</p>
+                </div>
+
+                <!-- Files -->
+                <div class="flex flex-col items-center text-center space-y-4">
+                    <div class="w-12 h-12 icon-border rounded-full flex items-center justify-center">
+                        <svg class="w-6 h-6 text-[#4a497f]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                            <polyline points="21 15 16 10 5 21"></polyline>
+                        </svg>
+                    </div>
+                    <h3 class="text-sm md:text-base font-medium text-white">File Management</h3>
+                    <p class="text-sm text-white/80">Gallery view for uploads with Active Storage integration. Manage images, documents, and media assets easily.</p>
+                </div>
+
+                <!-- Import/Export -->
+                <div class="flex flex-col items-center text-center space-y-4">
+                    <div class="w-12 h-12 icon-border rounded-full flex items-center justify-center">
+                        <svg class="w-6 h-6 text-[#4a497f]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                    </div>
+                    <h3 class="text-sm md:text-base font-medium text-white">Import & Export</h3>
+                    <p class="text-sm text-white/80">Bulk editor for JSON import/export of pages, posts, and menus. Migrate content easily between environments.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SEO Features Section -->
+    <section class="relative z-[2] py-12 md:py-16 px-4 md:px-8">
+        <div class="max-w-6xl mx-auto">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                <div class="space-y-6">
+                    <h2 class="text-xl md:text-2xl font-medium text-sky-100 leading-tight tracking-tight">
+                        SEO built-in, not bolted on
+                    </h2>
+                    <p class="text-sm md:text-base text-white/80 leading-relaxed">
+                        Every page and post comes with comprehensive SEO controls. No plugins required.
+                    </p>
+                    <ul class="space-y-3 text-sm md:text-base text-white/80">
+                        <li class="flex items-start gap-3">
+                            <svg class="w-5 h-5 text-pink-link flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            <span>SEO title and description with character limits</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <svg class="w-5 h-5 text-pink-link flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            <span>Open Graph metadata for social sharing</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <svg class="w-5 h-5 text-pink-link flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            <span>Canonical URLs and robots meta tags</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <svg class="w-5 h-5 text-pink-link flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            <span>SEO inheritance from parent pages</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <svg class="w-5 h-5 text-pink-link flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            <span>Automatic 301 redirects when URLs change</span>
+                        </li>
+                    </ul>
+                </div>
+                <div class="code-block rounded-lg p-6">
+                    <pre class="text-sm text-white/80 overflow-x-auto"><code><span class="text-pink-link"># Every page includes:</span>
+seo_title:        <span class="text-cyan-badge">"Custom SEO Title"</span>
+seo_description:  <span class="text-cyan-badge">"Meta description..."</span>
+og_title:         <span class="text-cyan-badge">"Social Share Title"</span>
+og_description:   <span class="text-cyan-badge">"Social description..."</span>
+og_image:         <span class="text-cyan-badge">"share-image.jpg"</span>
+canonical_url:    <span class="text-cyan-badge">"https://..."</span>
+no_index:         <span class="text-cyan-badge">false</span></code></pre>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Editor Section -->
+    <section id="editor" class="relative z-[2] py-12 md:py-16 px-4 md:px-8">
+        <div class="max-w-6xl mx-auto">
+            <!-- Section Header -->
+            <div class="text-center space-y-4 md:space-y-6 mb-12 md:mb-16">
+                <h2 class="text-xl md:text-2xl font-medium text-sky-100 leading-tight tracking-tight">
+                    A modern editor, not a bloated WYSIWYG
+                </h2>
+                <p class="text-sm md:text-base text-white max-w-3xl mx-auto leading-relaxed">
+                    Panda Editor is built on EditorJS, delivering a clean, block-based editing experience. No TinyMCE bloat, just focused content creation.
+                </p>
+            </div>
+
+            <!-- Editor Screenshot/Demo Placeholder -->
+            <div class="mb-12 md:mb-16">
+                <div class="relative max-w-4xl mx-auto">
+                    <!-- TODO: Replace with actual screenshot or animated GIF of editor -->
+                    <div class="code-block rounded-xl overflow-hidden aspect-video flex items-center justify-center">
+                        <div class="text-center p-8">
+                            <svg class="w-16 h-16 text-white/20 mx-auto mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                                <line x1="8" y1="21" x2="16" y2="21"></line>
+                                <line x1="12" y1="17" x2="12" y2="21"></line>
+                            </svg>
+                            <p class="text-white/40 text-sm">Editor screenshot coming soon</p>
+                            <a href="https://demo.pandacms.io/admin" class="inline-block mt-4 text-pink-link hover:opacity-80 text-sm font-medium">
+                                Try the live demo instead →
+                            </a>
+                        </div>
+                    </div>
+                    <!-- Decorative glow -->
+                    <div class="absolute -inset-4 bg-gradient-to-r from-pink-500/10 via-purple-500/10 to-cyan-500/10 rounded-2xl blur-xl -z-10"></div>
+                </div>
+            </div>
+
+            <!-- Editor Features Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
+                <!-- Block Types -->
+                <div class="text-center space-y-5">
+                    <div class="flex justify-center mb-4">
+                        <div class="w-12 h-12 icon-border rounded-full flex items-center justify-center">
+                            <svg class="w-6 h-6 text-[#4a497f]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="3" width="7" height="7"></rect>
+                                <rect x="14" y="3" width="7" height="7"></rect>
+                                <rect x="14" y="14" width="7" height="7"></rect>
+                                <rect x="3" y="14" width="7" height="7"></rect>
+                            </svg>
+                        </div>
+                    </div>
+                    <h3 class="text-base font-medium text-white">Rich Block Types</h3>
+                    <p class="text-white/80 text-sm leading-relaxed">
+                        Paragraphs, headers, lists, quotes, tables, images, alerts, code blocks, and delimiters. Everything you need.
+                    </p>
+                </div>
+
+                <!-- Footnotes -->
+                <div class="text-center space-y-5">
+                    <div class="flex justify-center mb-4">
+                        <div class="w-12 h-12 icon-border rounded-full flex items-center justify-center">
+                            <svg class="w-6 h-6 text-[#4a497f]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <path d="M14 2v6h6"></path>
+                                <path d="M9 15h6"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <h3 class="text-base font-medium text-white">Inline Footnotes</h3>
+                    <p class="text-white/80 text-sm leading-relaxed">
+                        Add footnotes inline with automatic numbering and a collapsible sources section. Perfect for citations.
+                    </p>
+                </div>
+
+                <!-- Converters -->
+                <div class="text-center space-y-5">
+                    <div class="flex justify-center mb-4">
+                        <div class="w-12 h-12 icon-border rounded-full flex items-center justify-center">
+                            <svg class="w-6 h-6 text-[#4a497f]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="16 3 21 3 21 8"></polyline>
+                                <line x1="4" y1="20" x2="21" y2="3"></line>
+                                <polyline points="21 16 21 21 16 21"></polyline>
+                                <line x1="15" y1="15" x2="21" y2="21"></line>
+                                <line x1="4" y1="4" x2="9" y2="9"></line>
+                            </svg>
+                        </div>
+                    </div>
+                    <h3 class="text-base font-medium text-white">Import Anything</h3>
+                    <p class="text-white/80 text-sm leading-relaxed">
+                        Built-in converters for HTML and Markdown. Migrate existing content or paste from anywhere.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Authentication Section -->
+    <section class="relative z-[2] py-12 md:py-16 px-4 md:px-8">
+        <div class="max-w-6xl mx-auto">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                <div class="order-2 lg:order-1 code-block rounded-lg p-6">
+                    <pre class="text-sm text-white/80 overflow-x-auto"><code><span class="text-pink-link"># config/initializers/panda.rb</span>
+Panda::Core.configure <span class="text-cyan-badge">do</span> |config|
+  config.authentication_providers = {
+    google: {
+      client_id: ENV[<span class="text-cyan-badge">"GOOGLE_CLIENT_ID"</span>],
+      client_secret: ENV[<span class="text-cyan-badge">"GOOGLE_SECRET"</span>],
+      hd: <span class="text-cyan-badge">"yourcompany.com"</span>
+    },
+    github: {
+      client_id: ENV[<span class="text-cyan-badge">"GITHUB_CLIENT_ID"</span>],
+      client_secret: ENV[<span class="text-cyan-badge">"GITHUB_SECRET"</span>]
+    }
+  }
+<span class="text-cyan-badge">end</span></code></pre>
+                </div>
+                <div class="order-1 lg:order-2 space-y-6">
+                    <h2 class="text-xl md:text-2xl font-medium text-sky-100 leading-tight tracking-tight">
+                        OAuth authentication, no passwords
+                    </h2>
+                    <p class="text-sm md:text-base text-white/80 leading-relaxed">
+                        Secure authentication via Google, Microsoft, or GitHub. Domain restrictions keep your admin locked down.
+                    </p>
+                    <ul class="space-y-3 text-sm md:text-base text-white/80">
+                        <li class="flex items-start gap-3">
+                            <svg class="w-5 h-5 text-pink-link flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            <span>Multiple providers simultaneously</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <svg class="w-5 h-5 text-pink-link flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            <span>Domain restrictions (e.g., @yourcompany.com only)</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <svg class="w-5 h-5 text-pink-link flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            <span>First user auto-promoted to admin</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <svg class="w-5 h-5 text-pink-link flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            <span>Rake tasks for user management</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pro CTA Section -->
+    <section class="relative z-[2] py-12 md:py-16 px-4 md:px-8">
+        <div class="max-w-3xl mx-auto">
+            <div class="code-block rounded-2xl p-8 text-center space-y-6">
+                <div class="inline-flex items-center gap-2 bg-badge px-4 py-2 rounded-full">
+                    <span class="text-pink-link text-sm font-bold">PRO</span>
+                </div>
+                <h2 class="text-xl md:text-2xl font-medium text-sky-100 leading-tight tracking-tight">
+                    Need more power?
+                </h2>
+                <p class="text-sm md:text-base text-white/80 max-w-xl mx-auto leading-relaxed">
+                    Collections, versioning, role-based access, REST API, content sync, and website user authentication. Starting at £100/site/year.
+                </p>
+                <a href="pro.html" class="inline-block bg-pink-link hover:bg-pink-500 text-white font-semibold px-8 py-4 rounded-full transition-colors text-lg shadow-lg shadow-pink-link/25">
+                    Explore Pro Features →
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Roadmap Section -->
+    <section id="roadmap" class="relative z-[2] py-12 md:py-16 px-4 md:px-8">
+        <div class="max-w-4xl mx-auto">
+            <div class="text-center space-y-4 md:space-y-6 mb-12">
+                <h2 class="text-xl md:text-2xl font-medium text-sky-100 leading-tight tracking-tight">
+                    What's next
+                </h2>
+                <p class="text-sm md:text-base text-white/80 max-w-2xl mx-auto leading-relaxed">
+                    We're actively developing new features to make Panda CMS even more powerful.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Static Site Generator -->
+                <div class="code-block rounded-xl p-6 space-y-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 icon-border rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-[#4a497f]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="4 17 10 11 4 5"></polyline>
+                                <line x1="12" y1="19" x2="20" y2="19"></line>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-medium text-white">Static Site Generator</h3>
+                            <span class="bg-cyan-badge/20 text-cyan-badge text-xs font-bold px-2 py-0.5 rounded">IN DEVELOPMENT</span>
+                        </div>
+                    </div>
+                    <p class="text-white/70 text-sm leading-relaxed">
+                        Export your entire site as static HTML for blazing-fast hosting on CDNs like Cloudflare Pages, Netlify, or S3.
+                    </p>
+                    <ul class="space-y-2 text-sm text-white/60">
+                        <li class="flex items-center gap-2">
+                            <span class="w-1 h-1 bg-cyan-badge rounded-full"></span>
+                            One-click full site export
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <span class="w-1 h-1 bg-cyan-badge rounded-full"></span>
+                            Incremental builds
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <span class="w-1 h-1 bg-cyan-badge rounded-full"></span>
+                            Deploy anywhere
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Broken Link Checker -->
+                <div class="code-block rounded-xl p-6 space-y-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 icon-border rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-[#4a497f]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                                <line x1="4" y1="4" x2="20" y2="20" stroke="#f763cc" stroke-width="2"></line>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-medium text-white">Broken Link Checker</h3>
+                            <span class="bg-cyan-badge/20 text-cyan-badge text-xs font-bold px-2 py-0.5 rounded">IN DEVELOPMENT</span>
+                        </div>
+                    </div>
+                    <p class="text-white/70 text-sm leading-relaxed">
+                        Automatically detect and report broken internal and external links across your site.
+                    </p>
+                    <ul class="space-y-2 text-sm text-white/60">
+                        <li class="flex items-center gap-2">
+                            <span class="w-1 h-1 bg-cyan-badge rounded-full"></span>
+                            Scheduled scans
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <span class="w-1 h-1 bg-cyan-badge rounded-full"></span>
+                            Email notifications
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <span class="w-1 h-1 bg-cyan-badge rounded-full"></span>
+                            Admin dashboard reports
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="text-center mt-8">
+                <p class="text-white/50 text-sm">
+                    Have a feature request? <a href="https://github.com/tastybamboo/panda-cms/issues" class="text-pink-link hover:opacity-80">Open an issue on GitHub</a>
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tech Stack Section -->
+    <section class="relative z-[2] py-12 md:py-16 px-4 md:px-8">
+        <div class="max-w-6xl mx-auto">
+            <div class="text-center space-y-4 md:space-y-6 mb-12">
+                <h2 class="text-xl md:text-2xl font-medium text-sky-100 leading-tight tracking-tight">
+                    Built with modern Rails
+                </h2>
+                <p class="text-sm md:text-base text-white max-w-3xl mx-auto leading-relaxed">
+                    Panda CMS uses the latest Rails conventions and tools. No legacy baggage.
+                </p>
+            </div>
+
+            <div class="flex flex-wrap justify-center gap-4 md:gap-6">
+                <div class="bg-badge/50 px-4 py-2 rounded-full text-cyan-badge text-sm">Rails 7.1+ / 7.2 / 8</div>
+                <div class="bg-badge/50 px-4 py-2 rounded-full text-cyan-badge text-sm">PostgreSQL / SQLite</div>
+                <div class="bg-badge/50 px-4 py-2 rounded-full text-cyan-badge text-sm">Tailwind CSS v4</div>
+                <div class="bg-badge/50 px-4 py-2 rounded-full text-cyan-badge text-sm">Phlex Components</div>
+                <div class="bg-badge/50 px-4 py-2 rounded-full text-cyan-badge text-sm">EditorJS</div>
+                <div class="bg-badge/50 px-4 py-2 rounded-full text-cyan-badge text-sm">Active Storage</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Comparison Section -->
+    <section id="compare" class="relative z-[2] py-12 md:py-16 px-4 md:px-8">
+        <div class="max-w-6xl mx-auto">
+            <div class="text-center space-y-4 md:space-y-6 mb-12">
+                <h2 class="text-xl md:text-2xl font-medium text-sky-100 leading-tight tracking-tight">
+                    How does Panda compare?
+                </h2>
+                <p class="text-sm md:text-base text-white/80 max-w-2xl mx-auto leading-relaxed">
+                    There are several great Rails CMS options. Here's how Panda stacks up.
+                </p>
+            </div>
+
+            <!-- Comparison Table -->
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="border-b border-white/10">
+                            <th class="text-left py-4 px-4 text-white/60 font-medium">Feature</th>
+                            <th class="text-center py-4 px-4 text-pink-link font-medium">Panda CMS</th>
+                            <th class="text-center py-4 px-4 text-white/60 font-medium">
+                                <span class="inline-flex items-center gap-1.5">
+                                    Spina
+                                    <a href="https://github.com/SpinaCMS/Spina" target="_blank" class="hover:text-white/80 transition-colors">
+                                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                                    </a>
+                                </span>
+                            </th>
+                            <th class="text-center py-4 px-4 text-white/60 font-medium">
+                                <span class="inline-flex items-center gap-1.5">
+                                    Alchemy
+                                    <a href="https://github.com/AlchemyCMS/alchemy_cms" target="_blank" class="hover:text-white/80 transition-colors">
+                                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                                    </a>
+                                </span>
+                            </th>
+                            <th class="text-center py-4 px-4 text-white/60 font-medium">
+                                <span class="inline-flex items-center gap-1.5">
+                                    Refinery
+                                    <a href="https://github.com/refinery/refinerycms" target="_blank" class="hover:text-white/80 transition-colors">
+                                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                                    </a>
+                                </span>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-white/70">
+                        <tr class="border-b border-white/5">
+                            <td class="py-3 px-4">Rails 7.1+ / 8 Support</td>
+                            <td class="py-3 px-4 text-center text-green-400">Yes</td>
+                            <td class="py-3 px-4 text-center text-green-400">Yes</td>
+                            <td class="py-3 px-4 text-center text-green-400">Yes</td>
+                            <td class="py-3 px-4 text-center text-yellow-400">Partial</td>
+                        </tr>
+                        <tr class="border-b border-white/5">
+                            <td class="py-3 px-4">Block-based Editor</td>
+                            <td class="py-3 px-4 text-center text-green-400">EditorJS</td>
+                            <td class="py-3 px-4 text-center text-white/50">Trix</td>
+                            <td class="py-3 px-4 text-center text-white/50">TinyMCE</td>
+                            <td class="py-3 px-4 text-center text-white/50">TinyMCE</td>
+                        </tr>
+                        <tr class="border-b border-white/5">
+                            <td class="py-3 px-4">OAuth Admin Auth</td>
+                            <td class="py-3 px-4 text-center text-green-400">Built-in</td>
+                            <td class="py-3 px-4 text-center text-white/50">DIY</td>
+                            <td class="py-3 px-4 text-center text-white/50">Devise</td>
+                            <td class="py-3 px-4 text-center text-white/50">Devise</td>
+                        </tr>
+                        <tr class="border-b border-white/5">
+                            <td class="py-3 px-4">Form Builder</td>
+                            <td class="py-3 px-4 text-center text-green-400">Yes + Spam Protection</td>
+                            <td class="py-3 px-4 text-center text-yellow-400">Pro only</td>
+                            <td class="py-3 px-4 text-center text-red-400">No</td>
+                            <td class="py-3 px-4 text-center text-red-400">No</td>
+                        </tr>
+                        <tr class="border-b border-white/5">
+                            <td class="py-3 px-4">SEO Controls</td>
+                            <td class="py-3 px-4 text-center text-green-400">Comprehensive</td>
+                            <td class="py-3 px-4 text-center text-yellow-400">Basic</td>
+                            <td class="py-3 px-4 text-center text-green-400">Good</td>
+                            <td class="py-3 px-4 text-center text-yellow-400">Basic</td>
+                        </tr>
+                        <tr class="border-b border-white/5">
+                            <td class="py-3 px-4">Front-end User Auth</td>
+                            <td class="py-3 px-4 text-center text-green-400">Separate gem</td>
+                            <td class="py-3 px-4 text-center text-red-400">No</td>
+                            <td class="py-3 px-4 text-center text-red-400">No</td>
+                            <td class="py-3 px-4 text-center text-red-400">No</td>
+                        </tr>
+                        <tr class="border-b border-white/5">
+                            <td class="py-3 px-4">Active Development</td>
+                            <td class="py-3 px-4 text-center text-green-400">2024+</td>
+                            <td class="py-3 px-4 text-center text-green-400">2016+</td>
+                            <td class="py-3 px-4 text-center text-green-400">2010+</td>
+                            <td class="py-3 px-4 text-center text-yellow-400">2009+</td>
+                        </tr>
+                        <tr class="border-b border-white/5">
+                            <td class="py-3 px-4">Global Search</td>
+                            <td class="py-3 px-4 text-center text-cyan-badge text-xs">Coming Soon</td>
+                            <td class="py-3 px-4 text-center text-yellow-400">Pro only</td>
+                            <td class="py-3 px-4 text-center text-red-400">No</td>
+                            <td class="py-3 px-4 text-center text-red-400">No</td>
+                        </tr>
+                        <tr class="border-b border-white/5">
+                            <td class="py-3 px-4">Content Import/Export</td>
+                            <td class="py-3 px-4 text-center text-green-400">JSON + YAML (Pro)</td>
+                            <td class="py-3 px-4 text-center text-red-400">No</td>
+                            <td class="py-3 px-4 text-center text-red-400">No</td>
+                            <td class="py-3 px-4 text-center text-red-400">No</td>
+                        </tr>
+                        <tr>
+                            <td class="py-3 px-4">Pro/Enterprise Tier</td>
+                            <td class="py-3 px-4 text-center text-green-400">£100/yr</td>
+                            <td class="py-3 px-4 text-center text-green-400">$279/domain</td>
+                            <td class="py-3 px-4 text-center text-red-400">No</td>
+                            <td class="py-3 px-4 text-center text-red-400">No</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <p class="text-center text-white/40 text-xs mt-6">
+                Comparison based on publicly available information as of January 2026. All are excellent open-source projects.
+            </p>
+        </div>
+    </section>
+
+    <!-- Divider -->
+    <div class="relative z-[2] max-w-6xl mx-auto px-4">
+        <div class="h-px bg-white opacity-10"></div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="relative z-[2] py-12 px-4 md:px-8">
+        <div class="max-w-6xl mx-auto">
+            <div class="flex flex-col items-center space-y-6">
+                <!-- Panda Footer Icon -->
+                <img src="assets/panda-footer.svg?v=2" alt="" class="w-auto h-14 opacity-60">
+
+                <div class="text-center space-y-2 text-sm text-gray-400">
+                    <p>Panda CMS is lovingly maintained by <a href="https://otaina.co.uk" class="underline hover:text-gray-300">Otaina Limited</a></p>
+                    <p>Open source under the <a href="https://opensource.org/licenses/BSD-3-Clause" class="underline hover:text-gray-300">BSD 3-Clause License</a></p>
+                </div>
+
+                <!-- Links -->
+                <div class="flex flex-wrap justify-center gap-6 text-sm text-gray-400">
+                    <a href="https://github.com/tastybamboo/panda-cms" class="hover:text-gray-300 inline-flex items-center gap-1">
+                        GitHub
+                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                            <polyline points="15 3 21 3 21 9"></polyline>
+                            <line x1="10" y1="14" x2="21" y2="3"></line>
+                        </svg>
+                    </a>
+                    <a href="https://rubygems.org/gems/panda-cms" class="hover:text-gray-300 inline-flex items-center gap-1">
+                        RubyGems
+                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                            <polyline points="15 3 21 3 21 9"></polyline>
+                            <line x1="10" y1="14" x2="21" y2="3"></line>
+                        </svg>
+                    </a>
+                    <a href="mailto:bamboo@pandacms.io" class="hover:text-gray-300">Contact</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const nav = document.querySelector('nav');
+
+        // Nav scroll effect
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 50) {
+                nav.classList.add('nav-scrolled');
+            } else {
+                nav.classList.remove('nav-scrolled');
+            }
+        });
+    </script>
+</body>
+</html>

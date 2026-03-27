@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gems - Panda CMS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Modak&display=swap" rel="stylesheet">
+    <style>
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        section[id] {
+            scroll-margin-top: 100px;
+        }
+
+        .font-modak {
+            font-family: 'Modak', cursive;
+        }
+
+        .bg-panda {
+            background-color: #262c30;
+        }
+
+        .text-gradient-title {
+            background: linear-gradient(174deg, #ea6aff 33%, #fa60bd 56%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .text-sky-100 {
+            color: #e0f2fe;
+        }
+
+        .text-pink-link {
+            color: #f763cc;
+        }
+
+        .text-cyan-badge {
+            color: #ace9f6;
+        }
+
+        .bg-badge {
+            background-color: #2e204d;
+        }
+
+        .icon-border {
+            background-color: #f4ebff;
+            border: 4px solid #f9f5ff;
+        }
+
+        .nav-scrolled {
+            background-color: rgba(46, 32, 77, 0.6);
+            backdrop-filter: blur(32px);
+            -webkit-backdrop-filter: blur(32px);
+        }
+
+        .code-block {
+            background-color: #1a1f24;
+            border: 1px solid #3a4149;
+        }
+    </style>
+</head>
+<body id="top" class="overflow-x-hidden bg-panda">
+    <!-- Navigation -->
+    <nav class="fixed top-0 left-0 right-0 z-50 bg-badge/90 backdrop-blur-sm transition-colors duration-300">
+        <div class="max-w-4xl mx-auto px-4 md:px-8 py-5 flex justify-center">
+            <div class="flex items-center gap-1 overflow-x-auto">
+                <a href="index.html" class="mr-2 flex-shrink-0 hover:opacity-80 transition-opacity">
+                    <img src="assets/panda-logo.svg" alt="Panda" class="w-8 h-8">
+                </a>
+                <a href="index.html#features" class="text-cyan-badge text-base font-medium px-4 py-1.5 rounded-full hover:bg-white/10 transition-colors whitespace-nowrap">Features</a>
+                <a href="index.html#editor" class="text-cyan-badge text-base font-medium px-4 py-1.5 rounded-full hover:bg-white/10 transition-colors whitespace-nowrap">Editor</a>
+                <a href="pro.html" class="text-cyan-badge text-base font-medium px-4 py-1.5 rounded-full hover:bg-white/10 transition-colors whitespace-nowrap">Pro</a>
+                <a href="gems.html" class="text-cyan-badge text-base font-medium px-4 py-1.5 rounded-full bg-white/10 transition-colors whitespace-nowrap">Gems</a>
+                <a href="https://demo.pandacms.io" class="text-cyan-badge text-base font-medium px-4 py-1.5 rounded-full hover:bg-white/10 transition-colors whitespace-nowrap">Demo</a>
+                <a href="https://github.com/tastybamboo/panda-cms" class="text-cyan-badge text-base font-medium px-4 py-1.5 rounded-full hover:bg-white/10 transition-colors whitespace-nowrap inline-flex items-center gap-1.5">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                    </svg>
+                    GitHub
+                </a>
+                <a href="mailto:bamboo@pandacms.io" class="text-cyan-badge text-base font-medium px-4 py-1.5 rounded-full hover:bg-white/10 transition-colors whitespace-nowrap">Contact</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="relative flex flex-col items-center px-4 md:px-8 pt-28 md:pt-32 pb-12 overflow-hidden">
+        <!-- Gradient Ellipse Background (fixed position) -->
+        <div class="fixed inset-0 flex items-start justify-center pointer-events-none z-[1]" style="top: -200px;">
+            <img src="assets/gradient-ellipse.png" alt="" class="w-full max-w-6xl opacity-60">
+        </div>
+
+        <h1 class="relative z-10 text-3xl md:text-4xl lg:text-5xl text-center mb-4 font-modak text-gradient-title">
+            Modular by design
+        </h1>
+        <p class="relative z-10 text-sm md:text-base text-center max-w-2xl mx-auto leading-relaxed text-white/80">
+            Panda CMS is built as a collection of gems. Add only what you need, or build your own applications on top of panda-core.
+        </p>
+    </section>
+
+    <!-- Core Gems Section -->
+    <section id="panda-gems" class="relative z-[2] py-12 md:py-16 px-4 md:px-8">
+        <div class="max-w-4xl mx-auto">
+            <div class="text-center space-y-4 md:space-y-6 mb-12">
+                <h2 class="text-xl md:text-2xl font-medium text-sky-100 leading-tight tracking-tight">
+                    Panda Gems
+                </h2>
+                <p class="text-sm md:text-base text-white/80 max-w-2xl mx-auto leading-relaxed">
+                    The official gems that make up the Panda CMS ecosystem.
+                </p>
+            </div>
+
+            <div class="space-y-6">
+                <!-- panda-core -->
+                <div class="code-block rounded-xl p-6">
+                    <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                        <div class="space-y-3">
+                            <div class="flex items-center gap-3">
+                                <h3 class="text-lg font-medium text-white">panda-core</h3>
+                                <span class="bg-cyan-badge/20 text-cyan-badge text-xs font-bold px-2 py-0.5 rounded">FOUNDATION</span>
+                            </div>
+                            <p class="text-white/70 text-sm leading-relaxed">
+                                The shared foundation for all Panda gems. Includes OAuth authentication (Google, Microsoft, GitHub), user management, and the base configuration system. Build your own Rails applications on top of this.
+                            </p>
+                            <div class="flex flex-wrap gap-2 text-xs text-white/50">
+                                <span class="bg-white/5 px-2 py-1 rounded">OAuth 2.0</span>
+                                <span class="bg-white/5 px-2 py-1 rounded">User Management</span>
+                                <span class="bg-white/5 px-2 py-1 rounded">Configuration</span>
+                            </div>
+                        </div>
+                        <div class="flex gap-3 flex-shrink-0">
+                            <a href="https://github.com/tastybamboo/panda-core" class="text-cyan-badge hover:opacity-80 text-sm inline-flex items-center gap-1">
+                                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                                </svg>
+                                GitHub
+                            </a>
+                            <a href="https://rubygems.org/gems/panda-core" class="text-pink-link hover:opacity-80 text-sm">RubyGems</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- panda-cms -->
+                <div class="code-block rounded-xl p-6">
+                    <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                        <div class="space-y-3">
+                            <div class="flex items-center gap-3">
+                                <h3 class="text-lg font-medium text-white">panda-cms</h3>
+                                <span class="bg-green-500/20 text-green-400 text-xs font-bold px-2 py-0.5 rounded">OPEN SOURCE</span>
+                            </div>
+                            <p class="text-white/70 text-sm leading-relaxed">
+                                The core CMS functionality. Pages, posts, templates, menus, forms, file management, and SEO controls. Everything you need to manage content on a Rails site.
+                            </p>
+                            <div class="flex flex-wrap gap-2 text-xs text-white/50">
+                                <span class="bg-white/5 px-2 py-1 rounded">Pages & Posts</span>
+                                <span class="bg-white/5 px-2 py-1 rounded">Templates</span>
+                                <span class="bg-white/5 px-2 py-1 rounded">Forms</span>
+                                <span class="bg-white/5 px-2 py-1 rounded">SEO</span>
+                            </div>
+                        </div>
+                        <div class="flex gap-3 flex-shrink-0">
+                            <a href="https://github.com/tastybamboo/panda-cms" class="text-cyan-badge hover:opacity-80 text-sm inline-flex items-center gap-1">
+                                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                                </svg>
+                                GitHub
+                            </a>
+                            <a href="https://rubygems.org/gems/panda-cms" class="text-pink-link hover:opacity-80 text-sm">RubyGems</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- panda-editor -->
+                <div class="code-block rounded-xl p-6">
+                    <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                        <div class="space-y-3">
+                            <div class="flex items-center gap-3">
+                                <h3 class="text-lg font-medium text-white">panda-editor</h3>
+                                <span class="bg-green-500/20 text-green-400 text-xs font-bold px-2 py-0.5 rounded">OPEN SOURCE</span>
+                            </div>
+                            <p class="text-white/70 text-sm leading-relaxed">
+                                The EditorJS-based block editor. Rich text editing with paragraphs, headers, lists, quotes, tables, images, alerts, code blocks, and inline footnotes. Includes HTML and Markdown converters.
+                            </p>
+                            <div class="flex flex-wrap gap-2 text-xs text-white/50">
+                                <span class="bg-white/5 px-2 py-1 rounded">EditorJS</span>
+                                <span class="bg-white/5 px-2 py-1 rounded">Block Editor</span>
+                                <span class="bg-white/5 px-2 py-1 rounded">Markdown Import</span>
+                            </div>
+                        </div>
+                        <div class="flex gap-3 flex-shrink-0">
+                            <a href="https://github.com/tastybamboo/panda-editor" class="text-cyan-badge hover:opacity-80 text-sm inline-flex items-center gap-1">
+                                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                                </svg>
+                                GitHub
+                            </a>
+                            <a href="https://rubygems.org/gems/panda-editor" class="text-pink-link hover:opacity-80 text-sm">RubyGems</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- panda-cms-pro -->
+                <div class="code-block rounded-xl p-6 border-pink-link/30">
+                    <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                        <div class="space-y-3">
+                            <div class="flex items-center gap-3">
+                                <h3 class="text-lg font-medium text-white">panda-cms-pro</h3>
+                                <span class="bg-pink-link/20 text-pink-link text-xs font-bold px-2 py-0.5 rounded">PRO</span>
+                            </div>
+                            <p class="text-white/70 text-sm leading-relaxed">
+                                Enterprise features for growing teams. Collections, content versioning, role-based access control, REST API, content sync, and website users authentication.
+                            </p>
+                            <div class="flex flex-wrap gap-2 text-xs text-white/50">
+                                <span class="bg-white/5 px-2 py-1 rounded">Collections</span>
+                                <span class="bg-white/5 px-2 py-1 rounded">Versioning</span>
+                                <span class="bg-white/5 px-2 py-1 rounded">RBAC</span>
+                                <span class="bg-white/5 px-2 py-1 rounded">API</span>
+                            </div>
+                        </div>
+                        <div class="flex gap-3 flex-shrink-0">
+                            <a href="pro.html" class="text-pink-link hover:opacity-80 text-sm font-medium">Learn more →</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Build on panda-core -->
+            <div class="mt-12 code-block rounded-xl p-6">
+                <h3 class="text-lg font-medium text-white mb-4">Build on panda-core</h3>
+                <p class="text-white/70 text-sm leading-relaxed mb-4">
+                    Want to build your own Rails application with OAuth authentication already sorted? Use panda-core as your foundation. You get user management, multi-provider OAuth, and a clean configuration system out of the box.
+                </p>
+                <div class="bg-black/30 rounded-lg p-4">
+                    <pre class="text-sm text-white/80 overflow-x-auto"><code><span class="text-pink-link"># Gemfile</span>
+gem <span class="text-cyan-badge">"panda-core"</span>
+
+<span class="text-pink-link"># Then configure your OAuth providers</span>
+Panda::Core.configure <span class="text-cyan-badge">do</span> |config|
+  config.authentication_providers = {
+    google: { client_id: ENV[<span class="text-cyan-badge">"GOOGLE_ID"</span>], ... }
+  }
+<span class="text-cyan-badge">end</span></code></pre>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Other Projects Section -->
+    <section id="other-projects" class="relative z-[2] py-12 md:py-16 px-4 md:px-8">
+        <div class="max-w-4xl mx-auto">
+            <div class="text-center space-y-4 md:space-y-6 mb-12">
+                <h2 class="text-xl md:text-2xl font-medium text-sky-100 leading-tight tracking-tight">
+                    Other Projects
+                </h2>
+                <p class="text-sm md:text-base text-white/80 max-w-2xl mx-auto leading-relaxed">
+                    More Rails gems from the Panda team.
+                </p>
+            </div>
+
+            <div class="space-y-6">
+                <!-- Sent Emails -->
+                <div class="code-block rounded-xl overflow-hidden">
+                    <div class="p-6 space-y-4">
+                        <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                            <div class="space-y-3">
+                                <div class="flex items-center gap-3">
+                                    <h3 class="text-lg font-medium text-white">sent_emails</h3>
+                                    <span class="bg-green-500/20 text-green-400 text-xs font-bold px-2 py-0.5 rounded">OPEN SOURCE</span>
+                                </div>
+                                <p class="text-white/70 text-sm leading-relaxed">
+                                    A Rails engine that captures sent emails with full content, tracks delivery status via webhooks, and provides a UI for viewing and resending emails. Perfect for debugging email delivery and keeping records.
+                                </p>
+                            </div>
+                            <div class="flex gap-3 flex-shrink-0">
+                                <a href="https://github.com/tastybamboo/sent_emails" class="text-cyan-badge hover:opacity-80 text-sm inline-flex items-center gap-1">
+                                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                                    </svg>
+                                    GitHub
+                                </a>
+                                <a href="https://rubygems.org/gems/sent_emails" class="text-pink-link hover:opacity-80 text-sm">RubyGems</a>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 pt-2">
+                            <div class="bg-white/5 rounded-lg p-3 text-center">
+                                <div class="text-white/40 text-xs uppercase tracking-wider mb-1">Capture</div>
+                                <div class="text-white text-sm">Full email content</div>
+                            </div>
+                            <div class="bg-white/5 rounded-lg p-3 text-center">
+                                <div class="text-white/40 text-xs uppercase tracking-wider mb-1">Track</div>
+                                <div class="text-white text-sm">Delivery status</div>
+                            </div>
+                            <div class="bg-white/5 rounded-lg p-3 text-center">
+                                <div class="text-white/40 text-xs uppercase tracking-wider mb-1">View</div>
+                                <div class="text-white text-sm">Admin UI included</div>
+                            </div>
+                            <div class="bg-white/5 rounded-lg p-3 text-center">
+                                <div class="text-white/40 text-xs uppercase tracking-wider mb-1">Resend</div>
+                                <div class="text-white text-sm">One-click retry</div>
+                            </div>
+                        </div>
+
+                        <div class="flex flex-wrap gap-2 text-xs text-white/50 pt-2">
+                            <span class="bg-white/5 px-2 py-1 rounded">Rails 7.0+</span>
+                            <span class="bg-white/5 px-2 py-1 rounded">Ruby 3.1+</span>
+                            <span class="bg-white/5 px-2 py-1 rounded">PostgreSQL optimized</span>
+                            <span class="bg-white/5 px-2 py-1 rounded">Mailpace webhooks</span>
+                            <span class="bg-white/5 px-2 py-1 rounded">RSpec helpers</span>
+                        </div>
+                    </div>
+
+                    <!-- Screenshot placeholder -->
+                    <div class="bg-black/30 p-4 border-t border-white/5">
+                        <div class="aspect-video bg-black/50 rounded-lg flex items-center justify-center">
+                            <div class="text-center">
+                                <svg class="w-12 h-12 text-white/20 mx-auto mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                                    <line x1="8" y1="21" x2="16" y2="21"></line>
+                                    <line x1="12" y1="17" x2="12" y2="21"></line>
+                                </svg>
+                                <p class="text-white/30 text-sm">Screenshot coming soon</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Divider -->
+    <div class="relative z-[2] max-w-6xl mx-auto px-4">
+        <div class="h-px bg-white opacity-10"></div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="relative z-[2] py-12 px-4 md:px-8">
+        <div class="max-w-6xl mx-auto">
+            <div class="flex flex-col items-center space-y-6">
+                <img src="assets/panda-footer.svg?v=2" alt="" class="w-auto h-14 opacity-60">
+
+                <div class="text-center space-y-2 text-sm text-gray-400">
+                    <p>Panda CMS is lovingly maintained by <a href="https://otaina.co.uk" class="underline hover:text-gray-300">Otaina Limited</a></p>
+                    <p>Open source under the <a href="https://opensource.org/licenses/BSD-3-Clause" class="underline hover:text-gray-300">BSD 3-Clause License</a></p>
+                </div>
+
+                <div class="flex flex-wrap justify-center gap-6 text-sm text-gray-400">
+                    <a href="https://github.com/tastybamboo/panda-cms" class="hover:text-gray-300 inline-flex items-center gap-1">
+                        GitHub
+                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                            <polyline points="15 3 21 3 21 9"></polyline>
+                            <line x1="10" y1="14" x2="21" y2="3"></line>
+                        </svg>
+                    </a>
+                    <a href="https://rubygems.org/gems/panda-cms" class="hover:text-gray-300 inline-flex items-center gap-1">
+                        RubyGems
+                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                            <polyline points="15 3 21 3 21 9"></polyline>
+                            <line x1="10" y1="14" x2="21" y2="3"></line>
+                        </svg>
+                    </a>
+                    <a href="mailto:bamboo@pandacms.io" class="hover:text-gray-300">Contact</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const nav = document.querySelector('nav');
+
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 50) {
+                nav.classList.add('nav-scrolled');
+            } else {
+                nav.classList.remove('nav-scrolled');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -93,32 +93,30 @@ class DependencyManager
   def discover_projects
     projects = []
 
-    # Scan gems/
+    # Scan root for panda-* gem directories
+    MONOREPO_ROOT.children.select(&:directory?).each do |dir|
+      next unless dir.basename.to_s.start_with?("panda-")
+      next unless dir.glob("*.gemspec").any?
+      deps = parse_panda_dependencies(dir)
+      projects << Project.new(
+        name: dir.basename.to_s,
+        path: dir,
+        type: :gem,
+        panda_deps: deps
+      )
+    end
+
+    # Legacy: also scan gems/ if it still exists (migration period)
     gems_dir = MONOREPO_ROOT / "gems"
     if gems_dir.directory?
       gems_dir.children.select(&:directory?).each do |dir|
         next unless dir.glob("*.gemspec").any?
+        next if projects.any? { |p| p.name == dir.basename.to_s }
         deps = parse_panda_dependencies(dir)
         projects << Project.new(
           name: dir.basename.to_s,
           path: dir,
           type: :gem,
-          panda_deps: deps
-        )
-      end
-    end
-
-    # Scan sites/
-    sites_dir = MONOREPO_ROOT / "sites"
-    if sites_dir.directory?
-      sites_dir.children.select(&:directory?).each do |dir|
-        next unless (dir / "Gemfile").file?
-        deps = parse_panda_dependencies(dir)
-        next if deps.empty? # not a panda-related site
-        projects << Project.new(
-          name: dir.basename.to_s,
-          path: dir,
-          type: :site,
           panda_deps: deps
         )
       end
@@ -921,7 +919,7 @@ def show_help
       The 'css compile' command uses panda-core's dummy Rails app to
       load all panda gems and compile a unified CSS file that includes
       Tailwind classes from all modules. The output is written to:
-        gems/panda-core/public/panda-core-assets/panda-core.css
+        panda-core/public/panda-core-assets/panda-core.css
 
     #{colorize("Dependency Management:", :cyan)}
       The 'deps' commands help manage cross-gem dependencies. After

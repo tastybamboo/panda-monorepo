@@ -168,19 +168,24 @@ else
   echo "$PANDA_REPOS" | jq -r '.[] | "  • \(.name)\(.private | if . then " (private)" else "" end)"'
   echo ""
 
-  # Clone discovered panda gem repositories
+  # Clone discovered panda gem repositories (to monorepo root)
   print_step "Cloning panda gem repositories..."
   echo ""
 
-  mkdir -p gems
   echo "$PANDA_REPOS" | jq -c '.[]' | while read -r repo; do
     name=$(echo "$repo" | jq -r '.name')
     url=$(echo "$repo" | jq -r '.url')
     is_private=$(echo "$repo" | jq -r '.private')
 
-    target="gems/$name"
+    # Clone to root level (e.g. panda-core/, not gems/panda-core/)
+    target="$name"
 
-    if [ -d "$target" ]; then
+    # Migrate from old gems/ location if present
+    if [ -d "gems/$name" ] && [ ! -d "$target" ]; then
+      print_info "Migrating $name from gems/ to root..."
+      mv "gems/$name" "$target"
+      echo "   ✓ Migrated"
+    elif [ -d "$target" ]; then
       print_info "$name already exists, pulling latest..."
       (cd "$target" && git pull > /dev/null 2>&1 && echo "   ✓ Updated" || echo "   ⚠ Failed to update")
     else
@@ -288,6 +293,6 @@ echo "      panda gems list"
 echo "      panda css compile"
 echo ""
 echo "   ${BOLD}4. Start working on a gem:${NC}"
-echo "      cd $REPO_DIR/gems/panda-core"
+echo "      cd $REPO_DIR/panda-core"
 echo "      bundle install"
 echo ""

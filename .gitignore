@@ -3,21 +3,25 @@ CLAUDE.local.md
 .claude-approvals.json
 .claude/settings.local.json
 
-# Dynamically cloned repositories (managed by init script)
-gems/
+# Dynamically cloned gem repositories (managed by bin/setup)
+panda-core/
+panda-cms/
+panda-editor/
+panda-pro/
+panda-cms-pro/
+panda-community/
+panda-helpdesk/
+panda-newsletters/
+panda-website-users/
+panda-assets-verify-action/
+
+# Dynamically cloned tooling (managed by bin/setup)
 generator/
 automation/
 
-# Sites directory (for example/demo sites, consuming apps)
-sites/
-
-# Other projects (manually cloned, not managed by init)
-# Add project-specific exclusions to .git/info/exclude instead
-website-users/
+# Legacy (no longer used)
 panda-ci/
-
-# Temporary documentation gathering (not committed)
-docs-temp/
+gems/
 
 # Personal TODO list (not committed)
 TODO.md
