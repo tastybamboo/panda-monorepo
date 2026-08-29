@@ -4,11 +4,8 @@ CLAUDE.local.md
 .claude/settings.local.json
 
 # Dynamically cloned gem repositories (managed by bin/setup)
-panda-core/
-panda-cms/
-panda-editor/
-panda-pro/
-panda-cms-pro/
+panda-*/
+panda-*
 panda-community/
 panda-helpdesk/
 panda-newsletters/
